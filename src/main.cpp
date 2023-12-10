@@ -7,7 +7,9 @@
 #include <time.h>
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
-#include <SPIFFS.h>
+//#include "SPIFFS.h"
+#include <LittleFS.h>
+#define SPIFFS LittleFS  //replace spiffs
 #include <PubSubClient.h>
 #include "FingerprintManager.h"
 #include "SettingsManager.h"
@@ -15,7 +17,7 @@
 
 enum class Mode { scan, enroll, wificonfig, maintenance };
 
-const char* VersionInfo = "0.4";
+const char* VersionInfo = "1.0";
 
 // ===================================================================================================================
 // Caution: below are not the credentials for connecting to your home network, they are for the Access Point mode!!!

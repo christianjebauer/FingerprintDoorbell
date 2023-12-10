@@ -6,7 +6,7 @@
 #include <DNSServer.h>
 #include <time.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
+#include <ElegantOTA.h>
 #include <SPIFFS.h>
 #include <PubSubClient.h>
 #include "FingerprintManager.h"
@@ -437,7 +437,7 @@ void startWebserver(){
 
 
   // Enable Over-the-air updates at http://<IPAddress>/update
-  AsyncElegantOTA.begin(&webServer);
+  ElegantOTA.begin(&webServer);    // Start ElegantOTA
   
   // Start server
   webServer.begin();
@@ -767,7 +767,9 @@ void loop()
     customInput1Value = i1;
     customInput2Value = i2;
 
-  #endif  
+  #endif
 
+  // OTA update handling
+  ElegantOTA.loop();
 }
 

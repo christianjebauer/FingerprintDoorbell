@@ -71,9 +71,17 @@
 		<input id="mqtt_server" name="mqtt_server" type="text" placeholder="Address of your MQTT broker" class="form-control input-md" value="%MQTT_SERVER%" required>
 		</div>
 	</div>
+	
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="mqtt_port">MQTT port</label>  
+		<div class="col-md-4">
+		<input id="mqtt_port" name="mqtt_port" type="text" placeholder="Port for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_PORT%">
+		<small class="text-muted">Leave empty if you want to use the default port (1883).</small>		
+		</div>
+	</div>
 
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="mqtt_username">MQTT username</label>  
+		<label class="col-md-4 control-label" for="mqtt_username">MQTT username</label>
 		<div class="col-md-4">
 		<input id="mqtt_username" name="mqtt_username" type="text" placeholder="Username for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_USERNAME%">
 		<small class="text-muted">Leave empty if your broker is not requiring authentication.</small>		

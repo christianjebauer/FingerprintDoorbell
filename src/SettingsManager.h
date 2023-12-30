@@ -21,20 +21,32 @@ struct AppSettings {
     bool   sensorPairingValid = false;
 };
 
+struct WebPageSettings {
+    String webPageUsername = "admin";
+    String webPagePassword = "admin";
+    String webPageRealm = "FingerprintDoorbell";
+};
+
 class SettingsManager {       
   private:
     WifiSettings wifiSettings;
+    WebPageSettings webPageSettings;
     AppSettings appSettings;
 
     void saveWifiSettings();
+    void saveWebPageSettings();
     void saveAppSettings();
 
   public:
     bool loadWifiSettings();
+    bool loadWebPageSettings();
     bool loadAppSettings();
 
     WifiSettings getWifiSettings();
     void saveWifiSettings(WifiSettings newSettings);
+
+    WebPageSettings getWebPageSettings();
+    void saveWebPageSettings(WebPageSettings newSettings);
     
     AppSettings getAppSettings();
     void saveAppSettings(AppSettings newSettings);
@@ -42,6 +54,7 @@ class SettingsManager {
     bool isWifiConfigured();
 
     bool deleteAppSettings();
+    bool deleteWebPageSettings();
     bool deleteWifiSettings();
 
     String generateNewPairingCode();

@@ -14,6 +14,19 @@ bool SettingsManager::loadWifiSettings() {
     }
 }
 
+bool SettingsManager::loadWebPageSettings() {
+    Preferences preferences;
+    if (preferences.begin("webPageSettings", true)) {
+        webPageSettings.webPageUsername = preferences.getString("webPageUsername", String("admin"));
+        webPageSettings.webPagePassword = preferences.getString("webPagePassword", String("admin"));
+        webPageSettings.webPageRealm = preferences.getString("webPageRealm", String("FingerprintDoorbell"));
+        preferences.end();
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool SettingsManager::loadAppSettings() {
     Preferences preferences;
     if (preferences.begin("appSettings", true)) {
@@ -41,6 +54,13 @@ void SettingsManager::saveWifiSettings() {
     preferences.end();
 }
 
+void SettingsManager::saveWebPageSettings() {
+    Preferences preferences;
+    preferences.begin("webPageSettings", false);
+    preferences.putString("webPageUsername", webPageSettings.webPageUsername);
+    preferences.putString("webPagePassword", webPageSettings.webPagePassword);
+}
+
 void SettingsManager::saveAppSettings() {
     Preferences preferences;
     preferences.begin("appSettings", false); 
@@ -62,6 +82,15 @@ WifiSettings SettingsManager::getWifiSettings() {
 void SettingsManager::saveWifiSettings(WifiSettings newSettings) {
     wifiSettings = newSettings;
     saveWifiSettings();
+}
+
+WebPageSettings SettingsManager::getWebPageSettings() {
+    return webPageSettings;
+}
+
+void SettingsManager::saveWebPageSettings(WebPageSettings newSettings) {
+    webPageSettings = newSettings;
+    saveWebPageSettings();
 }
 
 AppSettings SettingsManager::getAppSettings() {
@@ -94,6 +123,16 @@ bool SettingsManager::deleteWifiSettings() {
     bool rc;
     Preferences preferences;
     rc = preferences.begin("wifiSettings", false); 
+    if (rc)
+        rc = preferences.clear();
+    preferences.end();
+    return rc;
+}
+
+bool SettingsManager::deleteWebPageSettings() {
+    bool rc;
+    Preferences preferences;
+    rc = preferences.begin("webPageSettings", false); 
     if (rc)
         rc = preferences.clear();
     preferences.end();

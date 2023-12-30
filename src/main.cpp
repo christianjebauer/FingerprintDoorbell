@@ -6,6 +6,7 @@
 #include <DNSServer.h>
 #include <time.h>
 #include <ESPAsyncWebServer.h>
+#include <WebAuthentication.h> // otherwise the IDE wont find generateDigestHash()
 #include <ElegantOTA.h>
 //#include "SPIFFS.h"
 #include <LittleFS.h>
@@ -248,6 +249,16 @@ void initWiFiAccessPointForConfiguration() {
   Serial.println(WifiConfigIp); 
 }
 
+// Function handling the HTTP Digest Authentication
+bool authenticate(AsyncWebServerRequest *request, WebPageSettings webPageSettings) {
+  if (!request->authenticate(generateDigestHash(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), webPageSettings.webPageRealm.c_str()).c_str())) {
+    request->requestAuthentication(webPageSettings.webPageRealm.c_str(), true);
+    Serial.println("Not authenticated");
+    return false;
+  }
+  Serial.println(webPageSettings.webPageUsername + " successfully authenticated");
+  return true;
+}
 
 void startWebserver(){
   
@@ -259,6 +270,9 @@ void startWebserver(){
 
   // Init time by NTP Client
   configTime(gmtOffset_sec, daylightOffset_sec, settingsManager.getAppSettings().ntpServer.c_str());
+
+  // Load web page log in credentials
+  WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
   
   // webserver for normal operating or wifi config?
   if (currentMode == Mode::wificonfig)
@@ -267,25 +281,29 @@ void startWebserver(){
     // WiFi config mode
     // =================
 
-    webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(SPIFFS, "/wificonfig.html", String(), false, processor);
+    webServer.on("/", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        request->send(SPIFFS, "/wificonfig.html", String(), false, processor);
+      }
     });
 
-    webServer.on("/save", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("hostname"))
-      {
-        Serial.println("Save wifi config");
-        WifiSettings settings = settingsManager.getWifiSettings();
-        settings.hostname = request->arg("hostname");
-        settings.ssid = request->arg("ssid");
-        if (request->arg("password").equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
-          settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
-        else
-          settings.password = request->arg("password");
-        settingsManager.saveWifiSettings(settings);
-        shouldReboot = true;
+    webServer.on("/save", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("hostname"))
+        {
+          Serial.println("Save wifi config");
+          WifiSettings settings = settingsManager.getWifiSettings();
+          settings.hostname = request->arg("hostname");
+          settings.ssid = request->arg("ssid");
+          if (request->arg("password").equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+            settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
+          else
+            settings.password = request->arg("password");
+          settingsManager.saveWifiSettings(settings);
+          shouldReboot = true;
+        }
+        request->redirect("/");
       }
-      request->redirect("/");
     });
 
 
@@ -313,114 +331,122 @@ void startWebserver(){
     });
     webServer.addHandler(&events);
 
-    
     // Route for root / web page
-    webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(SPIFFS, "/index.html", String(), false, processor);
-    });
-
-    webServer.on("/enroll", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("startEnrollment"))
-      {
-        enrollId = request->arg("newFingerprintId");
-        enrollName = request->arg("newFingerprintName");
-        currentMode = Mode::enroll;
+    webServer.on("/", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        request->send(SPIFFS, "/index.html", String(), false, processor);
       }
-      request->redirect("/");
     });
 
-    webServer.on("/editFingerprints", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("selectedFingerprint"))
-      {
-        if(request->hasArg("btnDelete"))
+    webServer.on("/enroll", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("startEnrollment"))
         {
-          int id = request->arg("selectedFingerprint").toInt();
-          waitForMaintenanceMode();
-          fingerManager.deleteFinger(id);
-          currentMode = Mode::scan;
+          enrollId = request->arg("newFingerprintId");
+          enrollName = request->arg("newFingerprintName");
+          currentMode = Mode::enroll;
         }
-        else if (request->hasArg("btnRename"))
+        request->redirect("/");
+      }
+    });
+
+    webServer.on("/editFingerprints", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("selectedFingerprint"))
         {
-          int id = request->arg("selectedFingerprint").toInt();
-          String newName = request->arg("renameNewName");
-          fingerManager.renameFinger(id, newName);
+          if(request->hasArg("btnDelete"))
+          {
+            int id = request->arg("selectedFingerprint").toInt();
+            waitForMaintenanceMode();
+            fingerManager.deleteFinger(id);
+            currentMode = Mode::scan;
+          }
+          else if (request->hasArg("btnRename"))
+          {
+            int id = request->arg("selectedFingerprint").toInt();
+            String newName = request->arg("renameNewName");
+            fingerManager.renameFinger(id, newName);
+          }
+        }
+        request->redirect("/");  
+      }
+    });
+
+    webServer.on("/settings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnSaveSettings"))
+        {
+          Serial.println("Save settings");
+          AppSettings settings = settingsManager.getAppSettings();
+          settings.mqttServer = request->arg("mqtt_server");
+          settings.mqttUsername = request->arg("mqtt_username");
+          settings.mqttPassword = request->arg("mqtt_password");
+          settings.mqttRootTopic = request->arg("mqtt_rootTopic");
+          settings.ntpServer = request->arg("ntpServer");
+          settingsManager.saveAppSettings(settings);
+          request->redirect("/");  
+          shouldReboot = true;
+        } else {
+          request->send(SPIFFS, "/settings.html", String(), false, processor);
         }
       }
-      request->redirect("/");  
     });
 
-    webServer.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("btnSaveSettings"))
-      {
-        Serial.println("Save settings");
-        AppSettings settings = settingsManager.getAppSettings();
-        settings.mqttServer = request->arg("mqtt_server");
-        settings.mqttUsername = request->arg("mqtt_username");
-        settings.mqttPassword = request->arg("mqtt_password");
-        settings.mqttRootTopic = request->arg("mqtt_rootTopic");
-        settings.ntpServer = request->arg("ntpServer");
-        settingsManager.saveAppSettings(settings);
-        request->redirect("/");  
-        shouldReboot = true;
-      } else {
-        request->send(SPIFFS, "/settings.html", String(), false, processor);
+    webServer.on("/pairing", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnDoPairing"))
+        {
+          Serial.println("Do (re)pairing");
+          doPairing();
+          request->redirect("/");  
+        } else {
+          request->send(SPIFFS, "/settings.html", String(), false, processor);
+        }
       }
     });
 
+    webServer.on("/factoryReset", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnFactoryReset"))
+        {
+          notifyClients("Factory reset initiated...");
+          
+          if (!fingerManager.deleteAll())
+            notifyClients("Finger database could not be deleted.");
+          
+          if (!settingsManager.deleteAppSettings())
+            notifyClients("App settings could not be deleted.");
 
-    webServer.on("/pairing", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("btnDoPairing"))
-      {
-        Serial.println("Do (re)pairing");
-        doPairing();
-        request->redirect("/");  
-      } else {
-        request->send(SPIFFS, "/settings.html", String(), false, processor);
+          if (!settingsManager.deleteWifiSettings())
+            notifyClients("Wifi settings could not be deleted.");
+          
+          request->redirect("/");  
+          shouldReboot = true;
+        } else {
+          request->send(SPIFFS, "/settings.html", String(), false, processor);
+        }
       }
     });
 
-
-
-    webServer.on("/factoryReset", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("btnFactoryReset"))
-      {
-        notifyClients("Factory reset initiated...");
-        
-        if (!fingerManager.deleteAll())
-          notifyClients("Finger database could not be deleted.");
-        
-        if (!settingsManager.deleteAppSettings())
-          notifyClients("App settings could not be deleted.");
-
-        if (!settingsManager.deleteWifiSettings())
-          notifyClients("Wifi settings could not be deleted.");
-        
-        request->redirect("/");  
-        shouldReboot = true;
-      } else {
-        request->send(SPIFFS, "/settings.html", String(), false, processor);
+    webServer.on("/deleteAllFingerprints", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnDeleteAllFingerprints"))
+        {
+          notifyClients("Deleting all fingerprints...");
+          
+          if (!fingerManager.deleteAll())
+            notifyClients("Finger database could not be deleted.");
+          
+          request->redirect("/");  
+          
+        } else {
+          request->send(SPIFFS, "/settings.html", String(), false, processor);
+        }
       }
     });
-
-
-    webServer.on("/deleteAllFingerprints", HTTP_GET, [](AsyncWebServerRequest *request){
-      if(request->hasArg("btnDeleteAllFingerprints"))
-      {
-        notifyClients("Deleting all fingerprints...");
-        
-        if (!fingerManager.deleteAll())
-          notifyClients("Finger database could not be deleted.");
-        
-        request->redirect("/");  
-        
-      } else {
-        request->send(SPIFFS, "/settings.html", String(), false, processor);
-      }
-    });
-
 
     webServer.onNotFound([](AsyncWebServerRequest *request){
-      request->send(404);
+      request->send(404, "text/plain", "Not found");
     });
 
     
@@ -428,9 +454,11 @@ void startWebserver(){
 
 
   // common url callbacks
-  webServer.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->redirect("/");
-    shouldReboot = true;
+  webServer.on("/reboot", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+    if (authenticate(request, webPageSettings)) {
+      request->redirect("/");
+      shouldReboot = true;
+    }
   });
 
   webServer.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -634,7 +662,11 @@ void setup()
   #endif  
 
   settingsManager.loadWifiSettings();
+  settingsManager.loadWebPageSettings();
   settingsManager.loadAppSettings();
+
+  // Set Authentication Credentials
+  ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
 
   fingerManager.connect();
   

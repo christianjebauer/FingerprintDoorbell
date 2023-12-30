@@ -16,7 +16,16 @@
   </style>
 </head>
 <body>
-	<h1>%HOSTNAME%</h1>
+	<nav class="navbar navbar-inverse">
+		<div class="container-fluid">
+		  <div class="navbar-header">
+			<a class="navbar-brand" href="/">%HOSTNAME%</a>
+		  </div>
+		<ul class="nav navbar-nav navbar-right">
+		  <li><a href="logout">Log out</a></li>
+		</ul>
+		</div>
+	</nav>
 	<div class="alert alert-danger" role="alert"><b>You are currently in WiFi configuration mode!</b></br></br>In this mode the device acts as a WiFi access point to which you can temporarily connect to with your smartphone/pc
 	for configuring the access to your regular WiFi network. <br><br>
 	After saving the new WiFi configuration the device will restart and try to connect to your network.	If this fails the device will not go back to WiFi config mode automatically. You have to put the device manually in WiFi config mode by press and hold the sensor surface for 10 s while powering up the device.
@@ -64,6 +73,13 @@
 
 	</fieldset>
 	</form>
+	
+	<p></p>
+	<nav class="navbar navbar-default ">
+		<div class="container-fluid">
+		  <p class="navbar-text">FingerprintDoorbell, Version %VERSIONINFO%</p>
+		</div>
+	</nav>
 
 </body>
 </html>

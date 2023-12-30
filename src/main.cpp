@@ -10,7 +10,7 @@
 #include <ElegantOTA.h>
 //#include "SPIFFS.h"
 #include <LittleFS.h>
-#define SPIFFS LittleFS  //replace spiffs
+#define SPIFFS LittleFS  // replace SPIFFS
 #include <PubSubClient.h>
 #include "FingerprintManager.h"
 #include "SettingsManager.h"
@@ -129,7 +129,7 @@ String processor(const String& var){
     if (settingsManager.getWifiSettings().password.isEmpty())
       return "";
     else
-      return "********"; // for security reasons the wifi password will not left the device once configured
+      return "********"; // for security reasons the wifi password will not leave the device once configured
   } else if (var == "MQTT_SERVER") {
     return settingsManager.getAppSettings().mqttServer;
   } else if (var == "MQTT_USERNAME") {
@@ -140,6 +140,13 @@ String processor(const String& var){
     return settingsManager.getAppSettings().mqttRootTopic;
   } else if (var == "NTP_SERVER") {
     return settingsManager.getAppSettings().ntpServer;
+  } else if (var == "WEBPAGE_USERNAME") {
+    return settingsManager.getWebPageSettings().webPageUsername;
+  } else if (var == "WEBPAGE_PASSWORD") {
+    if (settingsManager.getWebPageSettings().webPagePassword.isEmpty())
+      return "";
+    else
+      return "********"; // for security reasons the web page password will not leave the device once configured
   }
 
   return String();
@@ -253,10 +260,8 @@ void initWiFiAccessPointForConfiguration() {
 bool authenticate(AsyncWebServerRequest *request, WebPageSettings webPageSettings) {
   if (!request->authenticate(generateDigestHash(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), webPageSettings.webPageRealm.c_str()).c_str())) {
     request->requestAuthentication(webPageSettings.webPageRealm.c_str(), true);
-    Serial.println("Not authenticated");
     return false;
   }
-  Serial.println(webPageSettings.webPageUsername + " successfully authenticated");
   return true;
 }
 
@@ -305,7 +310,6 @@ void startWebserver(){
         request->redirect("/");
       }
     });
-
 
     webServer.onNotFound([](AsyncWebServerRequest *request){
       AsyncResponseStream *response = request->beginResponseStream("text/html");
@@ -384,7 +388,16 @@ void startWebserver(){
           settings.mqttRootTopic = request->arg("mqtt_rootTopic");
           settings.ntpServer = request->arg("ntpServer");
           settingsManager.saveAppSettings(settings);
-          request->redirect("/");  
+          request->redirect("/settings");
+          shouldReboot = true;
+        } else if(request->hasArg("btnSaveWebPageSettings"))
+        {
+          Serial.println("Save web page settings");
+          WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
+          webPageSettings.webPageUsername = request->arg("webpage_username");
+          webPageSettings.webPagePassword = request->arg("webpage_password");
+          settingsManager.saveWebPageSettings(webPageSettings);
+          request->redirect("/settings");
           shouldReboot = true;
         } else {
           request->send(SPIFFS, "/settings.html", String(), false, processor);
@@ -463,6 +476,13 @@ void startWebserver(){
 
   webServer.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+  });
+
+  webServer.on("/logout", HTTP_GET, [](AsyncWebServerRequest *request){
+    File logoutPage = SPIFFS.open("/logout.html", "r");
+    // Set the content type
+    request->send(401, "text/html", logoutPage.readString());
+    logoutPage.close();
   });
 
 

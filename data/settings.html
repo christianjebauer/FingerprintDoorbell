@@ -50,6 +50,9 @@
 			<li><a href="/">Fingerprints</a></li>
 			<li class="active"><a href="#">Settings</a></li>
 		  </ul>
+		<ul class="nav navbar-nav navbar-right">
+		  <li><a href="logout">Log out</a></li>
+		</ul>
 		</div>
 	</nav>
 
@@ -63,30 +66,30 @@
 
 	<!-- Text input-->
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="mqtt_server">MQTT Server (Broker)</label>  
+		<label class="col-md-4 control-label" for="mqtt_server">MQTT server (broker)</label>  
 		<div class="col-md-4">
-		<input id="mqtt_server" name="mqtt_server" type="text" placeholder="Address of your MQTT Broker" class="form-control input-md" value="%MQTT_SERVER%" required>
+		<input id="mqtt_server" name="mqtt_server" type="text" placeholder="Address of your MQTT broker" class="form-control input-md" value="%MQTT_SERVER%" required>
 		</div>
 	</div>
 
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="mqtt_username">MQTT Username</label>  
+		<label class="col-md-4 control-label" for="mqtt_username">MQTT username</label>  
 		<div class="col-md-4">
-		<input id="mqtt_username" name="mqtt_username" type="text" placeholder="Username for connecting to your MQTT Broker" class="form-control input-md" value="%MQTT_USERNAME%">
+		<input id="mqtt_username" name="mqtt_username" type="text" placeholder="Username for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_USERNAME%">
 		<small class="text-muted">Leave empty if your broker is not requiring authentication.</small>		
 		</div>
 	</div>
 
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="mqtt_password">MQTT Password</label>  
+		<label class="col-md-4 control-label" for="mqtt_password">MQTT password</label>  
 		<div class="col-md-4">
-		<input id="mqtt_password" name="mqtt_password" type="text" placeholder="Password for connecting to your MQTT Broker" class="form-control input-md" value="%MQTT_PASSWORD%">
+		<input id="mqtt_password" name="mqtt_password" type="text" placeholder="Password for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_PASSWORD%">
 		<small class="text-muted">Leave empty if your broker is not requiring authentication.</small>		
 		</div>
 	</div>
 
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="mqtt_rootTopic">MQTT Root Topic</label>  
+		<label class="col-md-4 control-label" for="mqtt_rootTopic">MQTT root topic</label>  
 		<div class="col-md-4">
 		<input id="mqtt_rootTopic" name="mqtt_rootTopic" type="text" placeholder="Root topic where FingerprintDoorbell publishes its messages" class="form-control input-md" value="%MQTT_ROOTTOPIC%" required>
 		<small class="text-muted">Published Topics (=write)<br>
@@ -102,7 +105,7 @@
 	</div>
 
 	<div class="form-group">
-		<label class="col-md-4 control-label" for="ntpServer">NTP Server</label>  
+		<label class="col-md-4 control-label" for="ntpServer">NTP server</label>  
 		<div class="col-md-4">
 		<input id="ntpServer" name="ntpServer" type="text" placeholder="URL to NTP server" class="form-control input-md" value="%NTP_SERVER%">
 		<small class="text-muted">Used for timestamps in log panel. If you don't specify any, time will be always null.</small>		
@@ -113,7 +116,7 @@
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="btnSaveSettings"></label>
 	  <div class="col-md-4">
-		<button id="btnSaveSettings" name="btnSaveSettings" class="btn btn-success">Save and Restart</button>
+		<button id="btnSaveSettings" name="btnSaveSettings" class="btn btn-success">Save and restart</button>
 	  </div>
 	</div>
 
@@ -124,15 +127,47 @@
 	<fieldset>
 	
 	<!-- Form Name -->
-	<legend>Advanced Actions</legend>
+	<legend>Log in settings</legend>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="webpage_username">Administrator username</label>  
+		<div class="col-md-4">
+		<input id="webpage_username" name="webpage_username" type="text" placeholder="Username for this configuration web page" class="form-control input-md" value="%WEBPAGE_USERNAME%">		
+		</div>
+	</div>
+
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="webpage_password">Administrator password</label>  
+		<div class="col-md-4">
+		<input id="webpage_password" name="webpage_password" type="text" placeholder="Password for for this configuration web page" class="form-control input-md" value="%WEBPAGE_PASSWORD%">		
+		</div>
+	</div>
+	
+	<!-- Button -->
+	<div class="form-group">
+	  <label class="col-md-4 control-label" for="btnSaveWebPageSettings"></label>
+	  <div class="col-md-4">
+		<button id="btnSaveWebPageSettings" name="btnSaveWebPageSettings" class="btn btn-success">Save and restart</button>
+	  </div>
+	</div>
+	
+	</fieldset>
+	</form>
+
+	<form class="form-horizontal">
+	<fieldset>
+	
+	<!-- Form Name -->
+	<legend>Advanced actions</legend>
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="btnFirmwareUpdate"></label>
 		<div class="col-md-4">
-			<button id="btnFirmwareUpdate" name="btnFirmwareUpdate" class="btn btn-info" type="submit" formaction="update">Firmware-Update </button>
-			<button id="btnDoPairing" name="btnDoPairing" class="btn btn-warning" type="submit" formaction="pairing">Pairing a new sensor </button>
-			<button id="btnDeleteAllFingerprints" name="btnDeleteAllFingerprints" class="btn btn-danger" type="submit" formaction="deleteAllFingerprints" onclick="return confirm('This will delete all fingerprints. Are you sure you wanna do that?')">Delete all Fingerprints</button>
-			<button id="btnFactoryReset" name="btnFactoryReset" class="btn btn-danger" type="submit" formaction="factoryReset" onclick="return confirm('This will delete all fingerprints, your settings and your WiFi configuration. Are you sure you wanna do that?')">Factory-Reset</button>
+			<button id="btnFirmwareUpdate" name="btnFirmwareUpdate" class="btn btn-info" type="submit" formaction="update">Firmware update </button>
+			<button id="btnDoPairing" name="btnDoPairing" class="btn btn-warning" type="submit" formaction="pairing">Pair a new sensor </button>
+			<button id="btnDeleteAllFingerprints" name="btnDeleteAllFingerprints" class="btn btn-danger" type="submit" formaction="deleteAllFingerprints" onclick="return confirm('This will delete all fingerprints. Are you sure you wanna do that?')">Delete all fingerprints</button>
+			<button id="btnFactoryReset" name="btnFactoryReset" class="btn btn-danger" type="submit" formaction="factoryReset" onclick="return confirm('This will delete all fingerprints, your settings and your WiFi configuration. Are you sure you wanna do that?')">Factory reset</button>
 		</div>
 	  </div>
 

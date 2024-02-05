@@ -21,8 +21,8 @@ bool FingerprintManager::connect() {
           Serial.println("Found fingerprint sensor!");
         } else {
           Serial.println("Did not find fingerprint sensor :(");
-          connected = false;
-          return connected;
+          this->connected = false;
+          return this->connected;
         }
     }
     finger.LEDcontrol(FINGERPRINT_LED_FLASHING, 25, FINGERPRINT_LED_BLUE, 0); // sensor connected signal
@@ -42,8 +42,8 @@ bool FingerprintManager::connect() {
 
     loadFingerListFromPrefs();
 
-    connected = true;
-    return connected;
+    this->connected = true;
+    return this->connected;
 
     //updateTouchState(false);
 }
@@ -457,7 +457,7 @@ void FingerprintManager::setLedRingWifiConfig() {
 
 void FingerprintManager::setLedRingReady() {
   if (!ignoreTouchRing)
-    finger.LEDcontrol(touchRingActiveSequence, 250, touchRingActiveColor);
+    finger.LEDcontrol(activeSequence, 250, activeColor);
   else
     finger.LEDcontrol(FINGERPRINT_LED_ON, 0, FINGERPRINT_LED_BLUE); // just an indicator for me to see if touch ring is active or not
 }
@@ -559,8 +559,8 @@ void FingerprintManager::importSensorDB() {
 }
 
 void FingerprintManager::configTouchRingActive(uint8_t color, uint8_t sequence, uint8_t scanColor, uint8_t matchColor ) {
-  this->touchRingActiveColor = color;
-  this->touchRingActiveSequence = sequence;
+  this->activeColor = color;
+  this->activeSequence = sequence;
   this->scanColor = scanColor;
   this->matchColor = matchColor;
 }

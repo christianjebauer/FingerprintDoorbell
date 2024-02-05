@@ -19,11 +19,14 @@ struct AppSettings {
     String ntpServer = "pool.ntp.org";
     String sensorPin = "00000000";
     String sensorPairingCode = "";
-    int8_t touchRingActiveColor = 2;
-    int8_t touchRingActiveSequence = 1;
+    bool   sensorPairingValid = false;
+};
+
+struct ColorSettings {
+    int8_t activeColor = 2;
+    int8_t activeSequence = 1;
     int8_t scanColor = 1;
     int8_t matchColor = 3;
-    bool   sensorPairingValid = false;
 };
 
 struct WebPageSettings {
@@ -35,32 +38,39 @@ struct WebPageSettings {
 class SettingsManager {       
   private:
     WifiSettings wifiSettings;
-    WebPageSettings webPageSettings;
     AppSettings appSettings;
+    ColorSettings colorSettings;
+    WebPageSettings webPageSettings;
 
     void saveWifiSettings();
-    void saveWebPageSettings();
     void saveAppSettings();
+    void saveColorSettings();
+    void saveWebPageSettings();
 
   public:
     bool loadWifiSettings();
-    bool loadWebPageSettings();
     bool loadAppSettings();
+    bool loadColorSettings();
+    bool loadWebPageSettings();
 
     WifiSettings getWifiSettings();
     void saveWifiSettings(WifiSettings newSettings);
-
-    WebPageSettings getWebPageSettings();
-    void saveWebPageSettings(WebPageSettings newSettings);
     
     AppSettings getAppSettings();
     void saveAppSettings(AppSettings newSettings);
 
+    ColorSettings getColorSettings();
+    void saveColorSettings(ColorSettings newSettings);
+
+    WebPageSettings getWebPageSettings();
+    void saveWebPageSettings(WebPageSettings newSettings);
+
     bool isWifiConfigured();
 
-    bool deleteAppSettings();
-    bool deleteWebPageSettings();
     bool deleteWifiSettings();
+    bool deleteAppSettings();
+    bool deleteColorSettings();
+    bool deleteWebPageSettings();
 
     String generateNewPairingCode();
 

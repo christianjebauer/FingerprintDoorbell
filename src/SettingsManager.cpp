@@ -14,19 +14,6 @@ bool SettingsManager::loadWifiSettings() {
     }
 }
 
-bool SettingsManager::loadWebPageSettings() {
-    Preferences preferences;
-    if (preferences.begin("webPageSettings", true)) {
-        webPageSettings.webPageUsername = preferences.getString("webPageUsername", String("admin"));
-        webPageSettings.webPagePassword = preferences.getString("webPagePassword", String("admin"));
-        webPageSettings.webPageRealm = preferences.getString("webPageRealm", String("FingerprintDoorbell"));
-        preferences.end();
-        return true;
-    } else {
-        return false;
-    }
-}
-
 bool SettingsManager::loadAppSettings() {
     Preferences preferences;
     if (preferences.begin("appSettings", true)) {
@@ -39,10 +26,33 @@ bool SettingsManager::loadAppSettings() {
         appSettings.sensorPin = preferences.getString("sensorPin", "00000000");
         appSettings.sensorPairingCode = preferences.getString("pairingCode", "");
         appSettings.sensorPairingValid = preferences.getBool("pairingValid", false);
-        appSettings.touchRingActiveColor = preferences.getShort("ringActCol", 2);
-        appSettings.touchRingActiveSequence = preferences.getShort("ringActSeq", 1);
-        appSettings.scanColor = preferences.getShort("scanColor", 1);
-        appSettings.matchColor = preferences.getShort("matchColor", 3);
+        preferences.end();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SettingsManager::loadColorSettings() {
+    Preferences preferences;
+    if (preferences.begin("colorSettings", true)) {
+        colorSettings.activeColor = preferences.getUChar("ringActCol", 2);
+        colorSettings.activeSequence = preferences.getUChar("ringActSeq", 1);
+        colorSettings.scanColor = preferences.getUChar("scanColor", 1);
+        colorSettings.matchColor = preferences.getUChar("matchColor", 3);
+        preferences.end();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SettingsManager::loadWebPageSettings() {
+    Preferences preferences;
+    if (preferences.begin("webPageSettings", true)) {
+        webPageSettings.webPageUsername = preferences.getString("webPageUsername", String("admin"));
+        webPageSettings.webPagePassword = preferences.getString("webPagePassword", String("admin"));
+        webPageSettings.webPageRealm = preferences.getString("webPageRealm", String("FingerprintDoorbell"));
         preferences.end();
         return true;
     } else {
@@ -59,13 +69,6 @@ void SettingsManager::saveWifiSettings() {
     preferences.end();
 }
 
-void SettingsManager::saveWebPageSettings() {
-    Preferences preferences;
-    preferences.begin("webPageSettings", false);
-    preferences.putString("webPageUsername", webPageSettings.webPageUsername);
-    preferences.putString("webPagePassword", webPageSettings.webPagePassword);
-}
-
 void SettingsManager::saveAppSettings() {
     Preferences preferences;
     preferences.begin("appSettings", false); 
@@ -78,10 +81,24 @@ void SettingsManager::saveAppSettings() {
     preferences.putString("sensorPin", appSettings.sensorPin);
     preferences.putString("pairingCode", appSettings.sensorPairingCode);
     preferences.putBool("pairingValid", appSettings.sensorPairingValid);
-    preferences.putShort("ringActCol", appSettings.touchRingActiveColor);
-    preferences.putShort("ringActSeq", appSettings.touchRingActiveSequence);
-    preferences.putShort("scanColor", appSettings.scanColor);
-    preferences.putShort("matchColor", appSettings.matchColor);
+    preferences.end();
+}
+
+void SettingsManager::saveColorSettings() {
+    Preferences preferences;
+    preferences.begin("colorSettings", false);
+    preferences.putUChar("ringActCol", colorSettings.activeColor);
+    preferences.putUChar("ringActSeq", colorSettings.activeSequence);
+    preferences.putUChar("scanColor", colorSettings.scanColor);
+    preferences.putUChar("matchColor", colorSettings.matchColor);
+    preferences.end();
+}
+
+void SettingsManager::saveWebPageSettings() {
+    Preferences preferences;
+    preferences.begin("webPageSettings", false);
+    preferences.putString("webPageUsername", webPageSettings.webPageUsername);
+    preferences.putString("webPagePassword", webPageSettings.webPagePassword);
     preferences.end();
 }
 
@@ -94,15 +111,6 @@ void SettingsManager::saveWifiSettings(WifiSettings newSettings) {
     saveWifiSettings();
 }
 
-WebPageSettings SettingsManager::getWebPageSettings() {
-    return webPageSettings;
-}
-
-void SettingsManager::saveWebPageSettings(WebPageSettings newSettings) {
-    webPageSettings = newSettings;
-    saveWebPageSettings();
-}
-
 AppSettings SettingsManager::getAppSettings() {
     return appSettings;
 }
@@ -112,11 +120,39 @@ void SettingsManager::saveAppSettings(AppSettings newSettings) {
     saveAppSettings();
 }
 
+ColorSettings SettingsManager::getColorSettings() {
+    return colorSettings;
+}
+
+void SettingsManager::saveColorSettings(ColorSettings newSettings) {
+    colorSettings = newSettings;
+    saveColorSettings();
+}
+
+WebPageSettings SettingsManager::getWebPageSettings() {
+    return webPageSettings;
+}
+
+void SettingsManager::saveWebPageSettings(WebPageSettings newSettings) {
+    webPageSettings = newSettings;
+    saveWebPageSettings();
+}
+
 bool SettingsManager::isWifiConfigured() {
     if (wifiSettings.ssid.isEmpty() || wifiSettings.password.isEmpty())
         return false;
     else
         return true;
+}
+
+bool SettingsManager::deleteWifiSettings() {
+    bool rc;
+    Preferences preferences;
+    rc = preferences.begin("wifiSettings", false); 
+    if (rc)
+        rc = preferences.clear();
+    preferences.end();
+    return rc;
 }
 
 bool SettingsManager::deleteAppSettings() {
@@ -129,10 +165,10 @@ bool SettingsManager::deleteAppSettings() {
     return rc;
 }
 
-bool SettingsManager::deleteWifiSettings() {
+bool SettingsManager::deleteColorSettings() {
     bool rc;
     Preferences preferences;
-    rc = preferences.begin("wifiSettings", false); 
+    rc = preferences.begin("colorSettings", false); 
     if (rc)
         rc = preferences.clear();
     preferences.end();
@@ -179,4 +215,3 @@ String SettingsManager::generateNewPairingCode() {
 
     return String((char*)hexString);
 }
-

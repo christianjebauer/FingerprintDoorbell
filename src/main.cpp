@@ -27,8 +27,8 @@ const char* WifiConfigSsid = "FingerprintDoorbell-Config"; // SSID used for WiFi
 const char* WifiConfigPassword = "12345678"; // password used for WiFi when in Access Point mode for configuration. Min. 8 chars needed!
 IPAddress   WifiConfigIp(192, 168, 4, 1); // IP of access point in wifi config mode
 
-const char* Selected = "selected"; // password used for WiFi when in Access Point mode for configuration. Min. 8 chars needed!
-const char* Checked = "checked"; // password used for WiFi when in Access Point mode for configuration. Min. 8 chars needed!
+const char* Selected = "selected";
+const char* Checked = "checked";
 
 const long  gmtOffset_sec = 0; // UTC Time
 const int   daylightOffset_sec = 0; // UTC Time
@@ -150,56 +150,56 @@ String processor(const String& var){
       return "";
     else
       return "********"; // for security reasons the web page password will not leave the device once configured
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_1") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 1) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_2") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 2) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_3") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 3) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_4") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 4) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_5") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 5) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_6") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 6) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_COLOR_7") {
-    return (settingsManager.getAppSettings().touchRingActiveColor == 7) ? Selected : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_SEQUENCE_4") {
-    return (settingsManager.getAppSettings().touchRingActiveSequence == 4) ? Checked : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_SEQUENCE_3") {
-    return (settingsManager.getAppSettings().touchRingActiveSequence == 3) ? Checked : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_SEQUENCE_1") {
-    return (settingsManager.getAppSettings().touchRingActiveSequence == 1) ? Checked : "";
-  }  else if (var == "TOUCH_RING_ACTIVE_SEQUENCE_2") {
-    return (settingsManager.getAppSettings().touchRingActiveSequence == 2) ? Checked : "";
+  }  else if (var == "ACTIVE_COLOR_1") {
+    return (settingsManager.getColorSettings().activeColor == 1) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_2") {
+    return (settingsManager.getColorSettings().activeColor == 2) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_3") {
+    return (settingsManager.getColorSettings().activeColor == 3) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_4") {
+    return (settingsManager.getColorSettings().activeColor == 4) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_5") {
+    return (settingsManager.getColorSettings().activeColor == 5) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_6") {
+    return (settingsManager.getColorSettings().activeColor == 6) ? Selected : "";
+  }  else if (var == "ACTIVE_COLOR_7") {
+    return (settingsManager.getColorSettings().activeColor == 7) ? Selected : "";
+  }  else if (var == "ACTIVE_SEQUENCE_4") {
+    return (settingsManager.getColorSettings().activeSequence == 4) ? Checked : "";
+  }  else if (var == "ACTIVE_SEQUENCE_3") {
+    return (settingsManager.getColorSettings().activeSequence == 3) ? Checked : "";
+  }  else if (var == "ACTIVE_SEQUENCE_1") {
+    return (settingsManager.getColorSettings().activeSequence == 1) ? Checked : "";
+  }  else if (var == "ACTIVE_SEQUENCE_2") {
+    return (settingsManager.getColorSettings().activeSequence == 2) ? Checked : "";
   }  else if (var == "SCAN_COLOR_1") {
-    return (settingsManager.getAppSettings().scanColor == 1) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 1) ? Selected : "";
   }  else if (var == "SCAN_COLOR_2") {
-    return (settingsManager.getAppSettings().scanColor == 2) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 2) ? Selected : "";
   }  else if (var == "SCAN_COLOR_3") {
-    return (settingsManager.getAppSettings().scanColor == 3) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 3) ? Selected : "";
   }  else if (var == "SCAN_COLOR_4") {
-    return (settingsManager.getAppSettings().scanColor == 4) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 4) ? Selected : "";
   }  else if (var == "SCAN_COLOR_5") {
-    return (settingsManager.getAppSettings().scanColor == 5) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 5) ? Selected : "";
   }  else if (var == "SCAN_COLOR_6") {
-    return (settingsManager.getAppSettings().scanColor == 6) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 6) ? Selected : "";
   }  else if (var == "SCAN_COLOR_7") {
-    return (settingsManager.getAppSettings().scanColor == 7) ? Selected : "";
+    return (settingsManager.getColorSettings().scanColor == 7) ? Selected : "";
   }  else if (var == "MATCH_COLOR_1") {
-    return (settingsManager.getAppSettings().matchColor == 1) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 1) ? Selected : "";
   }  else if (var == "MATCH_COLOR_2") {
-    return (settingsManager.getAppSettings().matchColor == 2) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 2) ? Selected : "";
   }  else if (var == "MATCH_COLOR_3") {
-    return (settingsManager.getAppSettings().matchColor == 3) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 3) ? Selected : "";
   }  else if (var == "MATCH_COLOR_4") {
-    return (settingsManager.getAppSettings().matchColor == 4) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 4) ? Selected : "";
   }  else if (var == "MATCH_COLOR_5") {
-    return (settingsManager.getAppSettings().matchColor == 5) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 5) ? Selected : "";
   }  else if (var == "MATCH_COLOR_6") {
-    return (settingsManager.getAppSettings().matchColor == 6) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 6) ? Selected : "";
   }  else if (var == "MATCH_COLOR_7") {
-    return (settingsManager.getAppSettings().matchColor == 7) ? Selected : "";
+    return (settingsManager.getColorSettings().matchColor == 7) ? Selected : "";
   }
 
   return String();
@@ -441,11 +441,18 @@ void startWebserver(){
           settings.mqttPassword = request->arg("mqtt_password");
           settings.mqttRootTopic = request->arg("mqtt_rootTopic");
           settings.ntpServer = request->arg("ntpServer");
-          settings.touchRingActiveColor = request->arg("touchRingActiveColor").toInt();
-          settings.touchRingActiveSequence = request->arg("touchRingActiveSequence").toInt();
-          settings.scanColor = request->arg("scanColor").toInt();
-          settings.matchColor = request->arg("matchColor").toInt();
           settingsManager.saveAppSettings(settings);
+          request->redirect("/settings");
+          shouldReboot = true;
+        } else if(request->hasArg("btnSaveColorSettings"))
+        {
+          Serial.println("Save color and sequence settings");
+          ColorSettings colorSettings = settingsManager.getColorSettings();
+          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
+          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
+          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
+          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
+          settingsManager.saveColorSettings(colorSettings);
           request->redirect("/settings");
           shouldReboot = true;
         } else if(request->hasArg("btnSaveWebPageSettings"))
@@ -752,6 +759,7 @@ void setup()
   settingsManager.loadWifiSettings();
   settingsManager.loadWebPageSettings();
   settingsManager.loadAppSettings();
+  settingsManager.loadColorSettings();
 
   // Set Authentication Credentials
   ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
@@ -800,7 +808,7 @@ void setup()
         }
       }
       if (fingerManager.connected) {
-        fingerManager.configTouchRingActive(settingsManager.getAppSettings().touchRingActiveColor,settingsManager.getAppSettings().touchRingActiveSequence,settingsManager.getAppSettings().scanColor,settingsManager.getAppSettings().matchColor);
+        fingerManager.configTouchRingActive(settingsManager.getColorSettings().activeColor,settingsManager.getColorSettings().activeSequence,settingsManager.getColorSettings().scanColor,settingsManager.getColorSettings().matchColor);
         fingerManager.setLedRingReady();
       }
       else
@@ -901,4 +909,3 @@ void loop()
   // OTA update handling
   ElegantOTA.loop();
 }
-

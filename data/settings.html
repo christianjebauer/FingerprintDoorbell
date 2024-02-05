@@ -119,45 +119,63 @@
 		<small class="text-muted">Used for timestamps in log panel. If you don't specify any, time will be always null.</small>		
 		</div>
 	</div>
-
+	
+	<!-- Button -->
 	<div class="form-group">
-		<label for="touchRingActiveColor" class="col-md-4 control-label">Touch Ring Active: LED Color</label> 
+	  <label class="col-md-4 control-label" for="btnSaveSettings"></label>
+	  <div class="col-md-4">
+		<button id="btnSaveSettings" name="btnSaveSettings" class="btn btn-success">Save and restart</button>
+	  </div>
+	</div>
+
+	</fieldset>
+	</form>
+
+	<form class="form-horizontal">
+	<fieldset>
+	
+	<!-- Form Name -->
+	<legend>LED ring color and sequence settings</legend>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label for="activeColor" class="col-md-4 control-label">Touch ring active: LED color</label> 
 		<div class="col-md-4">
-			<select id="touchRingActiveColor" name="touchRingActiveColor" class="select form-control">
-				<option value="1" %TOUCH_RING_ACTIVE_COLOR_1%>Red</option>
-				<option value="2" %TOUCH_RING_ACTIVE_COLOR_2%>Blue</option>
-				<option value="3" %TOUCH_RING_ACTIVE_COLOR_3%>Purple</option>
-				<option value="4" %TOUCH_RING_ACTIVE_COLOR_4%>Green</option>
-				<option value="5" %TOUCH_RING_ACTIVE_COLOR_5%>Yellow</option>
-				<option value="6" %TOUCH_RING_ACTIVE_COLOR_6%>Cyan</option>
-				<option value="7" %TOUCH_RING_ACTIVE_COLOR_7%>White</option>
+			<select id="activeColor" name="activeColor" class="select form-control">
+				<option value="1" %ACTIVE_COLOR_1%>Red</option>
+				<option value="2" %ACTIVE_COLOR_2%>Blue</option>
+				<option value="3" %ACTIVE_COLOR_3%>Purple</option>
+				<option value="4" %ACTIVE_COLOR_4%>Green</option>
+				<option value="5" %ACTIVE_COLOR_5%>Yellow</option>
+				<option value="6" %ACTIVE_COLOR_6%>Cyan</option>
+				<option value="7" %ACTIVE_COLOR_7%>White</option>
 			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor supports all colors. Older ones only red, blue and purple!</small>
+			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
 		</div>
 	</div>
 	<div class="form-group">
-		<label for="touchRingActiveSequence" class="col-md-4 control-label">Touch Ring Active: LED Sequence</label> 
+		<label for="activeSequence" class="col-md-4 control-label">Touch ring active: LED sequence</label> 
 		<div class="col-md-4">
 			<label class="radio-inline">
-			<input type="radio" name="touchRingActiveSequence" value="4" %TOUCH_RING_ACTIVE_SEQUENCE_4%>
+			<input type="radio" name="activeSequence" value="4" %ACTIVE_SEQUENCE_4%>
 				Off
 			</label>
 			<label class="radio-inline">
-			<input type="radio" name="touchRingActiveSequence" value="3" %TOUCH_RING_ACTIVE_SEQUENCE_3%>
+			<input type="radio" name="activeSequence" value="3" %ACTIVE_SEQUENCE_3%>
 				On
 			</label>
 			<label class="radio-inline">
-			<input type="radio" name="touchRingActiveSequence" value="1" %TOUCH_RING_ACTIVE_SEQUENCE_1%>
+			<input type="radio" name="activeSequence" value="1" %ACTIVE_SEQUENCE_1%>
 				Breath
 			</label> 
 			<label class="radio-inline">
-			<input type="radio" name="touchRingActiveSequence" value="2" %TOUCH_RING_ACTIVE_SEQUENCE_2%>
+			<input type="radio" name="activeSequence" value="2" %ACTIVE_SEQUENCE_2%>
 				Blink
 			</label> 
 		</div>
 	</div> 
 	<div class="form-group">
-		<label for="scanColor" class="col-md-4 control-label">Scan fingerprint: LED Color</label> 
+		<label for="scanColor" class="col-md-4 control-label">Scan fingerprint: LED color</label> 
 		<div class="col-md-4">
 			<select id="scanColor" name="scanColor" class="select form-control">
 				<option value="1" %SCAN_COLOR_1%>Red</option>
@@ -168,11 +186,11 @@
 				<option value="6" %SCAN_COLOR_6%>Cyan</option>
 				<option value="7" %SCAN_COLOR_7%>White</option>
 			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor supports all colors. Older ones only red, blue and purple!</small>
+			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
 		</div>
 	</div>
 	<div class="form-group">
-		<label for="matchColor" class="col-md-4 control-label">Matching fingerprint: LED Color</label> 
+		<label for="matchColor" class="col-md-4 control-label">Matching fingerprint: LED color</label> 
 		<div class="col-md-4">
 			<select id="matchColor" name="matchColor" class="select form-control">
 				<option value="1" %MATCH_COLOR_1%>Red</option>
@@ -183,15 +201,15 @@
 				<option value="6" %MATCH_COLOR_6%>Cyan</option>
 				<option value="7" %MATCH_COLOR_7%>White</option>
 			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor supports all colors. Older ones only red, blue and purple!</small>
+			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
 		</div>
 	</div>
 
 	<!-- Button -->
 	<div class="form-group">
-	  <label class="col-md-4 control-label" for="btnSaveSettings"></label>
+	  <label class="col-md-4 control-label" for="btnSaveColorSettings"></label>
 	  <div class="col-md-4">
-		<button id="btnSaveSettings" name="btnSaveSettings" class="btn btn-success">Save and restart</button>
+		<button id="btnSaveColorSettings" name="btnSaveColorSettings" class="btn btn-success">Save and restart</button>
 	  </div>
 	</div>
 

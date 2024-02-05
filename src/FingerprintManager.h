@@ -49,8 +49,8 @@ class FingerprintManager {
     uint8_t writeNotepad(uint8_t pageNumber, const char *text, uint8_t length);
     uint8_t readNotepad(uint8_t pageNumber, char *text, uint8_t length);
     
-    uint8_t touchRingActiveColor = 2;
-    uint8_t touchRingActiveSequence = 1;
+    uint8_t activeColor = 2;
+    uint8_t activeSequence = 1;
     uint8_t scanColor = 1;
     uint8_t matchColor = 2;
 

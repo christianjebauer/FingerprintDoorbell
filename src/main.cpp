@@ -166,12 +166,16 @@ String processor(const String& var){
     return (settingsManager.getColorSettings().enrollColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
   } else if (var.indexOf("ENROLL_SEQUENCE") != -1) {
     return (settingsManager.getColorSettings().enrollSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("CONNECT_COLOR") != -1) {
+    return (settingsManager.getColorSettings().connectColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("CONNECT_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().connectSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
   } else if (var.indexOf("WIFI_COLOR") != -1) {
-    return (settingsManager.getColorSettings().wifiSequence == var.substring(var.length() - 1).toInt()) ? Selected : "";
+    return (settingsManager.getColorSettings().wifiColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
   } else if (var.indexOf("WIFI_SEQUENCE") != -1) {
     return (settingsManager.getColorSettings().wifiSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
   } else if (var.indexOf("ERROR_COLOR") != -1) {
-    return (settingsManager.getColorSettings().errorSequence == var.substring(var.length() - 1).toInt()) ? Selected : "";
+    return (settingsManager.getColorSettings().errorColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
   } else if (var.indexOf("ERROR_SEQUENCE") != -1) {
     return (settingsManager.getColorSettings().errorSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
   }
@@ -417,6 +421,8 @@ void startWebserver(){
           colorSettings.matchSequence = (uint8_t) request->arg("matchSequence").toInt();
           colorSettings.enrollColor = (uint8_t) request->arg("enrollColor").toInt();
           colorSettings.enrollSequence = (uint8_t) request->arg("enrollSequence").toInt();
+          colorSettings.connectColor = (uint8_t) request->arg("connectColor").toInt();
+          colorSettings.connectSequence = (uint8_t) request->arg("connectSequence").toInt();
           colorSettings.wifiColor = (uint8_t) request->arg("wifiColor").toInt();
           colorSettings.wifiSequence = (uint8_t) request->arg("wifiSequence").toInt();
           colorSettings.errorColor = (uint8_t) request->arg("errorColor").toInt();
@@ -447,33 +453,6 @@ void startWebserver(){
           shouldReboot = true;
         } else {
           request->send(SPIFFS, "/wifiSettings.html", String(), false, processor);
-        }
-      }
-    }); 
-
-    webServer.on("/colorSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnSaveColorSettings"))
-        {
-          Serial.println("Save color and sequence settings");
-          ColorSettings colorSettings = settingsManager.getColorSettings();
-          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
-          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
-          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
-          colorSettings.scanSequence = (uint8_t) request->arg("scanSequence").toInt();
-          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
-          colorSettings.matchSequence = (uint8_t) request->arg("matchSequence").toInt();
-          colorSettings.enrollColor = (uint8_t) request->arg("enrollColor").toInt();
-          colorSettings.enrollSequence = (uint8_t) request->arg("enrollSequence").toInt();
-          colorSettings.wifiColor = (uint8_t) request->arg("wifiColor").toInt();
-          colorSettings.wifiSequence = (uint8_t) request->arg("wifiSequence").toInt();
-          colorSettings.errorColor = (uint8_t) request->arg("errorColor").toInt();
-          colorSettings.errorSequence = (uint8_t) request->arg("errorSequence").toInt();
-          settingsManager.saveColorSettings(colorSettings);
-          request->redirect("/colorSettings");
-          shouldReboot = true;
-        } else {
-          request->send(SPIFFS, "/colorSettings.html", String(), false, processor);
         }
       }
     });
@@ -529,12 +508,18 @@ void startWebserver(){
           
           if (!fingerManager.deleteAll())
             notifyClients("Finger database could not be deleted.");
-          
-          if (!settingsManager.deleteAppSettings())
-            notifyClients("App settings could not be deleted.");
+
+          if (!settingsManager.deleteColorSettings())
+            notifyClients("Color settings could not be deleted.");
 
           if (!settingsManager.deleteWifiSettings())
             notifyClients("Wifi settings could not be deleted.");
+          
+          if (!settingsManager.deleteAppSettings())
+            notifyClients("App settings could not be deleted.");
+          
+          if (!settingsManager.deleteWebPageSettings())
+            notifyClients("Web page settings could not be deleted.");
           
           request->redirect("/");  
           shouldReboot = true;

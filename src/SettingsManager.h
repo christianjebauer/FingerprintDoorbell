@@ -34,6 +34,7 @@ struct ColorSettings {
     uint8_t scanColor = 1;
     uint8_t matchColor = 3;
     uint8_t enrollColor = 3;
+    u_int8_t connectColor = 2;
     uint8_t wifiColor = 1;
     uint8_t errorColor = 1;
 
@@ -45,6 +46,7 @@ struct ColorSettings {
     uint8_t scanSequence = 2;
     uint8_t matchSequence = 3;
     uint8_t enrollSequence = 2;
+    uint8_t connectSequence = 2;
     uint8_t wifiSequence = 1;
     uint8_t errorSequence = 3;
 };

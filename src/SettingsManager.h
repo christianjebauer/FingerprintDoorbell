@@ -23,10 +23,30 @@ struct AppSettings {
 };
 
 struct ColorSettings {
-    int8_t activeColor = 2;
-    int8_t activeSequence = 1;
-    int8_t scanColor = 1;
-    int8_t matchColor = 3;
+    // Red - 1
+    // Blue - 2
+    // Purple - 3
+    // Green - 4
+    // Yellow - 5
+    // Cyan - 6
+    // White - 7
+    uint8_t activeColor = 2;
+    uint8_t scanColor = 1;
+    uint8_t matchColor = 3;
+    uint8_t enrollColor = 3;
+    uint8_t wifiColor = 1;
+    uint8_t errorColor = 1;
+
+    // Breath - 1
+    // Blink - 2
+    // On - 3
+    // Off - 4
+    uint8_t activeSequence = 1;
+    uint8_t scanSequence = 2;
+    uint8_t matchSequence = 3;
+    uint8_t enrollSequence = 2;
+    uint8_t wifiSequence = 1;
+    uint8_t errorSequence = 3;
 };
 
 struct WebPageSettings {

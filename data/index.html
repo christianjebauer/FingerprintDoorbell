@@ -66,7 +66,9 @@
 		</div>
 		<ul class="nav navbar-nav">
 		  <li class="active"><a href="#">Fingerprints</a></li>
-		  <li><a href="settings">Settings</a></li>
+		  <li><a href="colorSettings">Colors</a></li>
+		  <li><a href="wifiSettings">WiFi</a></li>
+		  <li><a href="settings">MQTT & Admin</a></li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
 		  <li><a href="logout">Log out</a></li>
@@ -86,7 +88,7 @@
 	<!-- Select Multiple -->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="selectedFingerprint">Fingerprints in DB</label>
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 		<select id="selectedFingerprint" name="selectedFingerprint" class="form-control" size="10">
 		  <!--option value="1">1 - Option one</option-->
 		  %FINGERLIST%
@@ -98,7 +100,7 @@
 	<!-- Button (Double) -->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="btnRename"></label>
-	  <div class="col-md-8">
+	  <div class="col-md-5">
 		<button id="btnRename" name="btnRename" class="btn btn-info" onclick="askForNewName(event)">Rename</button>
 		<button id="btnDelete" name="btnDelete" class="btn btn-danger">Delete</button>
 	  </div>
@@ -116,7 +118,7 @@
 	<!-- Text input-->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="newFingerprintId">Memory slot (1-200)</label>  
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 	  <input id="newFingerprintId" name="newFingerprintId" type="text" placeholder="1-200" class="form-control input-md" required="">
 	  <small class="text-muted">The sensor has 200 memory slots available for storing fingerprints. The choosen slot number will also be used as an ID when matches are published by MQTT.</small>
 	  </div>
@@ -125,7 +127,7 @@
 	<!-- Text input-->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="newFingerprintName">Name</label>  
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 	  <input id="newFingerprintName" name="newFingerprintName" type="text" placeholder="(optional)" class="form-control input-md">
 	  <small class="text-muted">Just for human readability you can additionally assign an name to your slot number. The name will also been published by MQTT.</small>
 	  </div>
@@ -134,7 +136,7 @@
 	<!-- Button -->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="startEnrollment"></label>
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 		<button id="startEnrollment" name="startEnrollment" class="btn btn-success">Start enrollment</button>
 	  </div>
 	</div>

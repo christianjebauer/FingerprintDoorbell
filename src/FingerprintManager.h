@@ -4,6 +4,7 @@
 #include <Adafruit_Fingerprint.h>
 #include <Preferences.h>
 #include "global.h"
+#include "SettingsManager.h"
 
 #define mySerial Serial2
 
@@ -49,11 +50,7 @@ class FingerprintManager {
     uint8_t writeNotepad(uint8_t pageNumber, const char *text, uint8_t length);
     uint8_t readNotepad(uint8_t pageNumber, char *text, uint8_t length);
     
-    uint8_t activeColor = 2;
-    uint8_t activeSequence = 1;
-    uint8_t scanColor = 1;
-    uint8_t matchColor = 2;
-
+    ColorSettings colorSettings;
 
   public:
     bool connected;
@@ -71,7 +68,7 @@ class FingerprintManager {
     String getPairingCode();
     bool setPairingCode(String pairingCode);
     
-    void configTouchRingActive(uint8_t color, uint8_t sequence, uint8_t scanColor, uint8_t matchColor);
+    void setColorSettings(ColorSettings colorSettings);
     bool deleteAll();
 
     

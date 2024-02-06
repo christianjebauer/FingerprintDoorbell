@@ -150,56 +150,30 @@ String processor(const String& var){
       return "";
     else
       return "********"; // for security reasons the web page password will not leave the device once configured
-  }  else if (var == "ACTIVE_COLOR_1") {
-    return (settingsManager.getColorSettings().activeColor == 1) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_2") {
-    return (settingsManager.getColorSettings().activeColor == 2) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_3") {
-    return (settingsManager.getColorSettings().activeColor == 3) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_4") {
-    return (settingsManager.getColorSettings().activeColor == 4) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_5") {
-    return (settingsManager.getColorSettings().activeColor == 5) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_6") {
-    return (settingsManager.getColorSettings().activeColor == 6) ? Selected : "";
-  }  else if (var == "ACTIVE_COLOR_7") {
-    return (settingsManager.getColorSettings().activeColor == 7) ? Selected : "";
-  }  else if (var == "ACTIVE_SEQUENCE_4") {
-    return (settingsManager.getColorSettings().activeSequence == 4) ? Checked : "";
-  }  else if (var == "ACTIVE_SEQUENCE_3") {
-    return (settingsManager.getColorSettings().activeSequence == 3) ? Checked : "";
-  }  else if (var == "ACTIVE_SEQUENCE_1") {
-    return (settingsManager.getColorSettings().activeSequence == 1) ? Checked : "";
-  }  else if (var == "ACTIVE_SEQUENCE_2") {
-    return (settingsManager.getColorSettings().activeSequence == 2) ? Checked : "";
-  }  else if (var == "SCAN_COLOR_1") {
-    return (settingsManager.getColorSettings().scanColor == 1) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_2") {
-    return (settingsManager.getColorSettings().scanColor == 2) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_3") {
-    return (settingsManager.getColorSettings().scanColor == 3) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_4") {
-    return (settingsManager.getColorSettings().scanColor == 4) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_5") {
-    return (settingsManager.getColorSettings().scanColor == 5) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_6") {
-    return (settingsManager.getColorSettings().scanColor == 6) ? Selected : "";
-  }  else if (var == "SCAN_COLOR_7") {
-    return (settingsManager.getColorSettings().scanColor == 7) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_1") {
-    return (settingsManager.getColorSettings().matchColor == 1) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_2") {
-    return (settingsManager.getColorSettings().matchColor == 2) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_3") {
-    return (settingsManager.getColorSettings().matchColor == 3) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_4") {
-    return (settingsManager.getColorSettings().matchColor == 4) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_5") {
-    return (settingsManager.getColorSettings().matchColor == 5) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_6") {
-    return (settingsManager.getColorSettings().matchColor == 6) ? Selected : "";
-  }  else if (var == "MATCH_COLOR_7") {
-    return (settingsManager.getColorSettings().matchColor == 7) ? Selected : "";
+  } else if (var.indexOf("ACTIVE_COLOR") != -1) {
+    return (settingsManager.getColorSettings().activeColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("ACTIVE_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().activeSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("SCAN_COLOR") != -1) {
+    return (settingsManager.getColorSettings().scanColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("SCAN_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().scanSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("MATCH_COLOR") != -1) {
+    return (settingsManager.getColorSettings().matchColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("MATCH_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().matchSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("ENROLL_COLOR") != -1) {
+    return (settingsManager.getColorSettings().enrollColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("ENROLL_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().enrollSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("WIFI_COLOR") != -1) {
+    return (settingsManager.getColorSettings().wifiSequence == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("WIFI_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().wifiSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var.indexOf("ERROR_COLOR") != -1) {
+    return (settingsManager.getColorSettings().errorSequence == var.substring(var.length() - 1).toInt()) ? Selected : "";
+  } else if (var.indexOf("ERROR_SEQUENCE") != -1) {
+    return (settingsManager.getColorSettings().errorSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
   }
 
   return String();
@@ -429,6 +403,81 @@ void startWebserver(){
       }
     });
 
+    webServer.on("/colorSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnSaveColorSettings"))
+        {
+          Serial.println("Save color and sequence settings");
+          ColorSettings colorSettings = settingsManager.getColorSettings();
+          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
+          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
+          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
+          colorSettings.scanSequence = (uint8_t) request->arg("scanSequence").toInt();
+          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
+          colorSettings.matchSequence = (uint8_t) request->arg("matchSequence").toInt();
+          colorSettings.enrollColor = (uint8_t) request->arg("enrollColor").toInt();
+          colorSettings.enrollSequence = (uint8_t) request->arg("enrollSequence").toInt();
+          colorSettings.wifiColor = (uint8_t) request->arg("wifiColor").toInt();
+          colorSettings.wifiSequence = (uint8_t) request->arg("wifiSequence").toInt();
+          colorSettings.errorColor = (uint8_t) request->arg("errorColor").toInt();
+          colorSettings.errorSequence = (uint8_t) request->arg("errorSequence").toInt();
+          settingsManager.saveColorSettings(colorSettings);
+          request->redirect("/colorSettings");
+          shouldReboot = true;
+        } else {
+          request->send(SPIFFS, "/colorSettings.html", String(), false, processor);
+        }
+      }
+    });
+
+    webServer.on("/wifiSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnSaveWiFiSettings"))
+        {
+          Serial.println("Save wifi config");
+          WifiSettings settings = settingsManager.getWifiSettings();
+          settings.hostname = request->arg("hostname");
+          settings.ssid = request->arg("ssid");
+          if (request->arg("password").equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+            settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
+          else
+            settings.password = request->arg("password");
+          settingsManager.saveWifiSettings(settings);
+          request->redirect("/wifiSettings");
+          shouldReboot = true;
+        } else {
+          request->send(SPIFFS, "/wifiSettings.html", String(), false, processor);
+        }
+      }
+    }); 
+
+    webServer.on("/colorSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
+      if (authenticate(request, webPageSettings)) {
+        if(request->hasArg("btnSaveColorSettings"))
+        {
+          Serial.println("Save color and sequence settings");
+          ColorSettings colorSettings = settingsManager.getColorSettings();
+          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
+          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
+          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
+          colorSettings.scanSequence = (uint8_t) request->arg("scanSequence").toInt();
+          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
+          colorSettings.matchSequence = (uint8_t) request->arg("matchSequence").toInt();
+          colorSettings.enrollColor = (uint8_t) request->arg("enrollColor").toInt();
+          colorSettings.enrollSequence = (uint8_t) request->arg("enrollSequence").toInt();
+          colorSettings.wifiColor = (uint8_t) request->arg("wifiColor").toInt();
+          colorSettings.wifiSequence = (uint8_t) request->arg("wifiSequence").toInt();
+          colorSettings.errorColor = (uint8_t) request->arg("errorColor").toInt();
+          colorSettings.errorSequence = (uint8_t) request->arg("errorSequence").toInt();
+          settingsManager.saveColorSettings(colorSettings);
+          request->redirect("/colorSettings");
+          shouldReboot = true;
+        } else {
+          request->send(SPIFFS, "/colorSettings.html", String(), false, processor);
+        }
+      }
+    });
+
     webServer.on("/settings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
       if (authenticate(request, webPageSettings)) {
         if(request->hasArg("btnSaveSettings"))
@@ -442,17 +491,6 @@ void startWebserver(){
           settings.mqttRootTopic = request->arg("mqtt_rootTopic");
           settings.ntpServer = request->arg("ntpServer");
           settingsManager.saveAppSettings(settings);
-          request->redirect("/settings");
-          shouldReboot = true;
-        } else if(request->hasArg("btnSaveColorSettings"))
-        {
-          Serial.println("Save color and sequence settings");
-          ColorSettings colorSettings = settingsManager.getColorSettings();
-          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
-          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
-          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
-          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
-          settingsManager.saveColorSettings(colorSettings);
           request->redirect("/settings");
           shouldReboot = true;
         } else if(request->hasArg("btnSaveWebPageSettings"))
@@ -808,7 +846,7 @@ void setup()
         }
       }
       if (fingerManager.connected) {
-        fingerManager.configTouchRingActive(settingsManager.getColorSettings().activeColor,settingsManager.getColorSettings().activeSequence,settingsManager.getColorSettings().scanColor,settingsManager.getColorSettings().matchColor);
+        fingerManager.setColorSettings(settingsManager.getColorSettings());
         fingerManager.setLedRingReady();
       }
       else

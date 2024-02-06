@@ -99,6 +99,7 @@ void SettingsManager::saveWebPageSettings() {
     preferences.begin("webPageSettings", false);
     preferences.putString("webPageUsername", webPageSettings.webPageUsername);
     preferences.putString("webPagePassword", webPageSettings.webPagePassword);
+    preferences.putString("webPageRealm", webPageSettings.webPageRealm);
     preferences.end();
 }
 

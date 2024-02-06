@@ -48,7 +48,9 @@
 		  </div>
 		  <ul class="nav navbar-nav">
 			<li><a href="/">Fingerprints</a></li>
-			<li class="active"><a href="#">Settings</a></li>
+		  <li><a href="colorSettings">Colors</a></li>
+		  <li><a href="wifiSettings">WiFi</a></li>
+		  <li><a href="settings">MQTT & Admin</a></li>
 		  </ul>
 		<ul class="nav navbar-nav navbar-right">
 		  <li><a href="logout">Log out</a></li>
@@ -62,19 +64,19 @@
 	<fieldset>
 
 	<!-- Form Name -->
-	<legend>Settings</legend>
+	<legend>MQTT and NTP settings</legend>
 
 	<!-- Text input-->
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="mqtt_server">MQTT server (broker)</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="mqtt_server" name="mqtt_server" type="text" placeholder="Address of your MQTT broker" class="form-control input-md" value="%MQTT_SERVER%" required>
 		</div>
 	</div>
 	
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="mqtt_port">MQTT port</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="mqtt_port" name="mqtt_port" type="text" placeholder="Port for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_PORT%">
 		<small class="text-muted">Leave empty if you want to use the default port (1883).</small>		
 		</div>
@@ -82,7 +84,7 @@
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="mqtt_username">MQTT username</label>
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="mqtt_username" name="mqtt_username" type="text" placeholder="Username for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_USERNAME%">
 		<small class="text-muted">Leave empty if your broker is not requiring authentication.</small>		
 		</div>
@@ -90,7 +92,7 @@
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="mqtt_password">MQTT password</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="mqtt_password" name="mqtt_password" type="text" placeholder="Password for connecting to your MQTT broker" class="form-control input-md" value="%MQTT_PASSWORD%">
 		<small class="text-muted">Leave empty if your broker is not requiring authentication.</small>		
 		</div>
@@ -98,7 +100,7 @@
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="mqtt_rootTopic">MQTT root topic</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="mqtt_rootTopic" name="mqtt_rootTopic" type="text" placeholder="Root topic where FingerprintDoorbell publishes its messages" class="form-control input-md" value="%MQTT_ROOTTOPIC%" required>
 		<small class="text-muted">Published Topics (=write)<br>
 			- "%MQTT_ROOTTOPIC%/ring"<br>
@@ -114,7 +116,7 @@
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="ntpServer">NTP server</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="ntpServer" name="ntpServer" type="text" placeholder="URL to NTP server" class="form-control input-md" value="%NTP_SERVER%">
 		<small class="text-muted">Used for timestamps in log panel. If you don't specify any, time will be always null.</small>		
 		</div>
@@ -123,93 +125,8 @@
 	<!-- Button -->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="btnSaveSettings"></label>
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 		<button id="btnSaveSettings" name="btnSaveSettings" class="btn btn-success">Save and restart</button>
-	  </div>
-	</div>
-
-	</fieldset>
-	</form>
-
-	<form class="form-horizontal">
-	<fieldset>
-	
-	<!-- Form Name -->
-	<legend>LED ring color and sequence settings</legend>
-	
-	<!-- Text input-->
-	<div class="form-group">
-		<label for="activeColor" class="col-md-4 control-label">Touch ring active: LED color</label> 
-		<div class="col-md-4">
-			<select id="activeColor" name="activeColor" class="select form-control">
-				<option value="1" %ACTIVE_COLOR_1%>Red</option>
-				<option value="2" %ACTIVE_COLOR_2%>Blue</option>
-				<option value="3" %ACTIVE_COLOR_3%>Purple</option>
-				<option value="4" %ACTIVE_COLOR_4%>Green</option>
-				<option value="5" %ACTIVE_COLOR_5%>Yellow</option>
-				<option value="6" %ACTIVE_COLOR_6%>Cyan</option>
-				<option value="7" %ACTIVE_COLOR_7%>White</option>
-			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
-		</div>
-	</div>
-	<div class="form-group">
-		<label for="activeSequence" class="col-md-4 control-label">Touch ring active: LED sequence</label> 
-		<div class="col-md-4">
-			<label class="radio-inline">
-			<input type="radio" name="activeSequence" value="4" %ACTIVE_SEQUENCE_4%>
-				Off
-			</label>
-			<label class="radio-inline">
-			<input type="radio" name="activeSequence" value="3" %ACTIVE_SEQUENCE_3%>
-				On
-			</label>
-			<label class="radio-inline">
-			<input type="radio" name="activeSequence" value="1" %ACTIVE_SEQUENCE_1%>
-				Breath
-			</label> 
-			<label class="radio-inline">
-			<input type="radio" name="activeSequence" value="2" %ACTIVE_SEQUENCE_2%>
-				Blink
-			</label> 
-		</div>
-	</div> 
-	<div class="form-group">
-		<label for="scanColor" class="col-md-4 control-label">Scan fingerprint: LED color</label> 
-		<div class="col-md-4">
-			<select id="scanColor" name="scanColor" class="select form-control">
-				<option value="1" %SCAN_COLOR_1%>Red</option>
-				<option value="2" %SCAN_COLOR_2%>Blue</option>
-				<option value="3" %SCAN_COLOR_3%>Purple</option>
-				<option value="4" %SCAN_COLOR_4%>Green</option>
-				<option value="5" %SCAN_COLOR_5%>Yellow</option>
-				<option value="6" %SCAN_COLOR_6%>Cyan</option>
-				<option value="7" %SCAN_COLOR_7%>White</option>
-			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
-		</div>
-	</div>
-	<div class="form-group">
-		<label for="matchColor" class="col-md-4 control-label">Matching fingerprint: LED color</label> 
-		<div class="col-md-4">
-			<select id="matchColor" name="matchColor" class="select form-control">
-				<option value="1" %MATCH_COLOR_1%>Red</option>
-				<option value="2" %MATCH_COLOR_2%>Blue</option>
-				<option value="3" %MATCH_COLOR_3%>Purple</option>
-				<option value="4" %MATCH_COLOR_4%>Green</option>
-				<option value="5" %MATCH_COLOR_5%>Yellow</option>
-				<option value="6" %MATCH_COLOR_6%>Cyan</option>
-				<option value="7" %MATCH_COLOR_7%>White</option>
-			</select> 
-			<small class="text-muted">Not all versions of the R503 sensor support all colors. The older ones support only red, blue and purple!</small>
-		</div>
-	</div>
-
-	<!-- Button -->
-	<div class="form-group">
-	  <label class="col-md-4 control-label" for="btnSaveColorSettings"></label>
-	  <div class="col-md-4">
-		<button id="btnSaveColorSettings" name="btnSaveColorSettings" class="btn btn-success">Save and restart</button>
 	  </div>
 	</div>
 
@@ -225,14 +142,14 @@
 	<!-- Text input-->
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="webpage_username">Administrator username</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="webpage_username" name="webpage_username" type="text" placeholder="Username for this configuration web page" class="form-control input-md" value="%WEBPAGE_USERNAME%">		
 		</div>
 	</div>
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="webpage_password">Administrator password</label>  
-		<div class="col-md-4">
+		<div class="col-md-5">
 		<input id="webpage_password" name="webpage_password" type="text" placeholder="Password for for this configuration web page" class="form-control input-md" value="%WEBPAGE_PASSWORD%">		
 		</div>
 	</div>
@@ -240,7 +157,7 @@
 	<!-- Button -->
 	<div class="form-group">
 	  <label class="col-md-4 control-label" for="btnSaveWebPageSettings"></label>
-	  <div class="col-md-4">
+	  <div class="col-md-5">
 		<button id="btnSaveWebPageSettings" name="btnSaveWebPageSettings" class="btn btn-success">Save and restart</button>
 	  </div>
 	</div>
@@ -252,11 +169,11 @@
 	<fieldset>
 	
 	<!-- Form Name -->
-	<legend>Advanced actions</legend>
+	<legend>Advanced options</legend>
 
 	<div class="form-group">
 		<label class="col-md-4 control-label" for="btnFirmwareUpdate"></label>
-		<div class="col-md-4">
+		<div class="col-md-5">
 			<button id="btnFirmwareUpdate" name="btnFirmwareUpdate" class="btn btn-info" type="submit" formaction="update">Firmware update </button>
 			<button id="btnDoPairing" name="btnDoPairing" class="btn btn-warning" type="submit" formaction="pairing">Pair a new sensor </button>
 			<button id="btnDeleteAllFingerprints" name="btnDeleteAllFingerprints" class="btn btn-danger" type="submit" formaction="deleteAllFingerprints" onclick="return confirm('This will delete all fingerprints. Are you sure you wanna do that?')">Delete all fingerprints</button>

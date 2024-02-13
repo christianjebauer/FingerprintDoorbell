@@ -4,6 +4,7 @@
 
 #include <WiFi.h>
 #include <DNSServer.h>
+#include <ESPmDNS.h>
 #include <time.h>
 #include <ESPAsyncWebServer.h>
 #include <WebAuthentication.h> // otherwise the IDE wont find generateDigestHash()
@@ -269,8 +270,8 @@ bool checkPairingValid() {
 bool initWifi() {
   // Connect to Wi-Fi
   WifiSettings wifiSettings = settingsManager.getWifiSettings();
-  WiFi.mode(WIFI_STA);
   WiFi.setHostname(wifiSettings.hostname.c_str()); //define hostname
+  WiFi.mode(WIFI_STA);
   WiFi.begin(wifiSettings.ssid.c_str(), wifiSettings.password.c_str());
   int counter = 0;
   while (WiFi.status() != WL_CONNECTED) {
@@ -290,6 +291,20 @@ bool initWifi() {
       notifyClients("Static IP address settings are incomplete. DHCP is used instead.");
     }
   }
+
+
+  //initialize mDNS service
+  esp_err_t err = mdns_init();
+  if (err) {
+      printf("MDNS Init failed: %d\n", err);
+  }
+  //set hostname
+  mdns_hostname_set(wifiSettings.hostname.c_str());
+  //set default instance
+  mdns_instance_name_set(wifiSettings.hostname.c_str());
+  // Add service to MDNS-SD
+  MDNS.addService("http", "tcp", 80);
+
   Serial.println("Connected!");
 
   // Print ESP32 Local IP Address

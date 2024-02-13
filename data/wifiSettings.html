@@ -49,7 +49,7 @@
 		  <ul class="nav navbar-nav">
 			<li><a href="/">Fingerprints</a></li>
 		  <li><a href="colorSettings">Colors</a></li>
-		  <li><a href="wifiSettings">WiFi</a></li>
+		  <li><a href="wifiSettings">WiFi & Network</a></li>
 		  <li><a href="settings">MQTT & Admin</a></li>
 		  </ul>
 		<ul class="nav navbar-nav navbar-right">
@@ -64,7 +64,7 @@
 	<fieldset>
 
 	<!-- Form Name -->
-	<legend>WiFi settings</legend>
+	<legend>WiFi</legend>
 
 	<!-- Text input-->
 	<div class="form-group">
@@ -88,7 +88,69 @@
 		<label class="col-md-4 control-label" for="hostname">Hostname</label>  
 		<div class="col-md-5">
 		<input id="hostname" name="hostname" type="text" placeholder="Hostname of your FingerprintDoorbell" class="form-control input-md" value="%HOSTNAME%" required>
-		<small class="text-muted">The name under which this device will be available in your network. Also used in the title of the web frontend. <br>Hint: just leave it "FingerprintDoorbell" unless you have multiple devices and want to differentiate between them.</small>		
+		<small class="text-muted">The name under which this device will be available in your network. Also used in the title of the web front end. <br>Hint: just leave it "FingerprintDoorbell" unless you have multiple devices and want to differentiate between them.</small>		
+		</div>
+	</div>
+
+	<p></p>
+	<!-- Form Name -->
+	<legend>IPv4 and DNS</legend>
+	
+	<div class="form-group">
+		<label for="dhcp_setting" class="col-md-4 control-label"></label> 
+		<div class="col-md-5">
+			<label class="radio-inline">
+			<input type="radio" name="dhcp_setting" value="1" %DHCP_SETTING_1%>
+				DHCP server
+			</label>
+			<label class="radio-inline">
+			<input type="radio" name="dhcp_setting" value="0" %DHCP_SETTING_0%>
+				Static IP settings
+			</label>
+		</div>
+		<label for="dhcp_setting_warning" class="col-md-4 control-label"></label> 
+		<div class="col-md-5">
+			<small class="text-muted">Be carefull with those settings. If you choose an invalid IP range, you might not be able to reach the web interface anymore.</small>
+		</div>
+	</div>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="local_ip">Local IP address</label>  
+		<div class="col-md-5">
+		<input id="local_ip" name="local_ip" type="text" placeholder="" class="form-control input-md" value="%LOCAL_IP%" required>	
+		</div>
+	</div>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="gateway_ip">Gateway IP address</label>  
+		<div class="col-md-5">
+		<input id="gateway_ip" name="gateway_ip" type="text" placeholder="" class="form-control input-md" value="%GATEWAY_IP%" required>	
+		</div>
+	</div>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="subnet_mask">Subnet mask</label>  
+		<div class="col-md-5">
+		<input id="subnet_mask" name="subnet_mask" type="text" placeholder="" class="form-control input-md" value="%SUBNET_MASK%" required>	
+		</div>
+	</div>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="dns_ip0">DNS server 1</label>  
+		<div class="col-md-5">
+		<input id="dns_ip0" name="dns_ip0" type="text" placeholder="" class="form-control input-md" value="%DNS_IP0%" required>	
+		</div>
+	</div>
+	
+	<!-- Text input-->
+	<div class="form-group">
+		<label class="col-md-4 control-label" for="dns_ip1">DNS server 2</label>  
+		<div class="col-md-5">
+		<input id="dns_ip1" name="dns_ip1" type="text" placeholder="" class="form-control input-md" value="%DNS_IP1%" required>	
 		</div>
 	</div>
 	  

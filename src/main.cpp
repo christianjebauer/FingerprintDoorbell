@@ -133,8 +133,22 @@ String processor(const String& var){
       return "";
     else
       return "********"; // for security reasons the wifi password will not leave the device once configured
+  } else if (var.indexOf("DHCP_SETTING") != -1) {
+    return (settingsManager.getWifiSettings().dhcp_setting == var.substring(var.length() - 1).toInt()) ? Checked : "";
+  } else if (var == "LOCAL_IP") {
+    return settingsManager.getWifiSettings().localIP.toString();
+  } else if (var == "GATEWAY_IP") {
+    return settingsManager.getWifiSettings().gatewayIP.toString();
+  } else if (var == "SUBNET_MASK") {
+    return settingsManager.getWifiSettings().subnetMask.toString();
+  } else if (var == "DNS_IP0") {
+    return settingsManager.getWifiSettings().dnsIP0.toString();
+  } else if (var == "DNS_IP1") {
+    return settingsManager.getWifiSettings().dnsIP1.toString();
   } else if (var == "MQTT_SERVER") {
     return settingsManager.getAppSettings().mqttServer;
+  }else if (var == "MQTT_PORT") {
+    return String(settingsManager.getAppSettings().mqttPort);
   } else if (var == "MQTT_USERNAME") {
     return settingsManager.getAppSettings().mqttUsername;
   } else if (var == "MQTT_PASSWORD") {
@@ -256,7 +270,6 @@ bool initWifi() {
   // Connect to Wi-Fi
   WifiSettings wifiSettings = settingsManager.getWifiSettings();
   WiFi.mode(WIFI_STA);
-  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
   WiFi.setHostname(wifiSettings.hostname.c_str()); //define hostname
   WiFi.begin(wifiSettings.ssid.c_str(), wifiSettings.password.c_str());
   int counter = 0;
@@ -267,10 +280,29 @@ bool initWifi() {
     if (counter > 30)
       return false;
   }
+  if (!settingsManager.getWifiSettings().dhcp_setting){
+    if (settingsManager.getWifiSettings().localIP.toString() != "0.0.0.0" && settingsManager.getWifiSettings().gatewayIP.toString() != "0.0.0.0" && settingsManager.getWifiSettings().subnetMask.toString() != "0.0.0.0" && settingsManager.getWifiSettings().dnsIP0.toString() != "0.0.0.0" && settingsManager.getWifiSettings().dnsIP1.toString() != "0.0.0.0"){
+      if (WiFi.config(settingsManager.getWifiSettings().localIP, settingsManager.getWifiSettings().gatewayIP, settingsManager.getWifiSettings().subnetMask, settingsManager.getWifiSettings().dnsIP0, settingsManager.getWifiSettings().dnsIP1))
+        notifyClients("Static IP address settings were activated.");
+      else
+        notifyClients("Static IP address settings could not be activated. DHCP is used instead.");
+    } else {
+      notifyClients("Static IP address settings are incomplete. DHCP is used instead.");
+    }
+  }
   Serial.println("Connected!");
 
   // Print ESP32 Local IP Address
+  Serial.print("Local IP address: ");
   Serial.println(WiFi.localIP());
+  Serial.print("Gateway: ");
+  Serial.println(WiFi.gatewayIP());
+  Serial.print("Subnet mask: ");
+  Serial.println(WiFi.subnetMask());
+  Serial.print("DNS server 1: ");
+  Serial.println(WiFi.dnsIP(0));
+  Serial.print("DNS server 2: ");
+  Serial.println(WiFi.dnsIP(1));
 
   return true;
 }
@@ -448,6 +480,17 @@ void startWebserver(){
             settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
           else
             settings.password = request->arg("password");
+          settings.dhcp_setting = request->arg("dhcp_setting").equals("1");
+          if(!settings.localIP.fromString(request->arg("local_ip")))
+            Serial.println("Local IP address could not be parsed.");
+          if(!settings.gatewayIP.fromString(request->arg("gateway_ip")))
+            Serial.println("Gateway IP address could not be parsed.");
+          if(!settings.subnetMask.fromString(request->arg("subnet_mask")))
+            Serial.println("Subnet mask could not be parsed.");
+          if(!settings.dnsIP0.fromString(request->arg("dns_ip0")))
+            Serial.println("DNS server 1 could not be parsed.");
+          if(!settings.dnsIP1.fromString(request->arg("dns_ip1")))
+            Serial.println("DNS server 2 could not be parsed.");
           settingsManager.saveWifiSettings(settings);
           request->redirect("/wifiSettings");
           shouldReboot = true;
@@ -751,18 +794,6 @@ void reboot()
   ESP.restart();
 }
 
-void splitIpAndPort(String mqttServerConfigString, const char* &mqttHostname, u16_t &mqttPort) {
-        s8_t positionOfColon = mqttServerConfigString.indexOf(":");
-
-        if (positionOfColon >= 0) {
-          mqttHostname = mqttServerConfigString.substring(0 , positionOfColon).c_str();
-          mqttPort = mqttServerConfigString.substring(positionOfColon + 1).toInt();
-        } else {
-          mqttHostname = mqttServerConfigString.c_str();
-          mqttPort = 1883;
-        }
-}
-
 void setup()
 {
   // open serial monitor for debug infos
@@ -811,13 +842,9 @@ void setup()
         notifyClients("Error: No MQTT Broker is configured! Please go to settings and enter your server URL + user credentials.");
       } else {
         delay(5000);
-        
-        const char* mqttHostname;
-        u16_t mqttPort;
-        splitIpAndPort(settingsManager.getAppSettings().mqttServer , mqttHostname, mqttPort);
 
         IPAddress mqttServerIp;
-        if (WiFi.hostByName(mqttHostname, mqttServerIp))
+        if (WiFi.hostByName(settingsManager.getAppSettings().mqttServer.c_str(), mqttServerIp))
         {
           mqttConfigValid = true;
           Serial.println("IP used for MQTT server: " + mqttServerIp.toString() + " | Port: " + String(settingsManager.getAppSettings().mqttPort));

@@ -8,6 +8,12 @@ struct WifiSettings {
     String ssid = "";
     String password = "";
     String hostname = "";
+    bool dhcp_setting = true;
+    IPAddress localIP;
+    IPAddress gatewayIP;
+    IPAddress subnetMask;
+    IPAddress dnsIP0;
+    IPAddress dnsIP1;
 };
 
 struct AppSettings {

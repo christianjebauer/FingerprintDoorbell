@@ -7,6 +7,12 @@ bool SettingsManager::loadWifiSettings() {
         wifiSettings.ssid = preferences.getString("ssid", String(""));
         wifiSettings.password = preferences.getString("password", String(""));
         wifiSettings.hostname = preferences.getString("hostname", String("FingerprintDoorbell"));
+        wifiSettings.dhcp_setting = preferences.getBool("dhcp_setting", true);
+        wifiSettings.localIP.fromString(preferences.getString("localIP"));
+        wifiSettings.gatewayIP.fromString(preferences.getString("gatewayIP"));
+        wifiSettings.subnetMask.fromString(preferences.getString("subnetMask"));
+        wifiSettings.dnsIP0.fromString(preferences.getString("dnsIP0"));
+        wifiSettings.dnsIP1.fromString(preferences.getString("dnsIP1"));
         preferences.end();
         return true;
     } else {
@@ -66,6 +72,12 @@ void SettingsManager::saveWifiSettings() {
     preferences.putString("ssid", wifiSettings.ssid);
     preferences.putString("password", wifiSettings.password);
     preferences.putString("hostname", wifiSettings.hostname);
+    preferences.putBool("dhcp_setting", wifiSettings.dhcp_setting);
+    preferences.putString("localIP", wifiSettings.localIP.toString());
+    preferences.putString("gatewayIP", wifiSettings.gatewayIP.toString());
+    preferences.putString("subnetMask", wifiSettings.subnetMask.toString());
+    preferences.putString("dnsIP0", wifiSettings.dnsIP0.toString());
+    preferences.putString("dnsIP1", wifiSettings.dnsIP1.toString());
     preferences.end();
 }
 

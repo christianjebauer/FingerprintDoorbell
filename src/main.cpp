@@ -6,12 +6,10 @@
 #include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <time.h>
-#include <ESPAsyncWebServer.h>
-#include <WebAuthentication.h> // otherwise the IDE wont find generateDigestHash()
+#include <PsychicHttp.h>
+#include <PsychicHttpsServer.h>
 #include <ElegantOTA.h>
-//#include "SPIFFS.h"
 #include <LittleFS.h>
-#define SPIFFS LittleFS  // replace SPIFFS
 #include <PubSubClient.h>
 #include "FingerprintManager.h"
 #include "SettingsManager.h"
@@ -28,8 +26,8 @@ const char* WifiConfigSsid = "FingerprintDoorbell-Config"; // SSID used for WiFi
 const char* WifiConfigPassword = "12345678"; // password used for WiFi when in Access Point mode for configuration. Min. 8 chars needed!
 IPAddress   WifiConfigIp(192, 168, 4, 1); // IP of access point in wifi config mode
 
-const char* Selected = "selected";
-const char* Checked = "checked";
+String selected = "selected";
+String checked = "checked";
 
 const long  gmtOffset_sec = 0; // UTC Time
 const int   daylightOffset_sec = 0; // UTC Time
@@ -49,6 +47,9 @@ String logMessages[logMessagesCount]; // log messages, 0=most recent log message
 bool shouldReboot = false;
 unsigned long wifiReconnectPreviousMillis = 0;
 unsigned long mqttReconnectPreviousMillis = 0;
+unsigned long ota_progress_millis = 0;
+unsigned long lastUpdate = 0;
+char output[60];
 
 String enrollId;
 String enrollName;
@@ -60,8 +61,8 @@ bool needMaintenanceMode = false;
 
 const byte DNS_PORT = 53;
 DNSServer dnsServer;
-AsyncWebServer webServer(80); // AsyncWebServer  on port 80
-AsyncEventSource events("/events"); // event source (Server-Sent events)
+PsychicHttpServer webServer; // PsychicHttpServer on port 80
+PsychicEventSource events; // event source (Server-Sent events)
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -117,87 +118,54 @@ bool waitForMaintenanceMode() {
   return true;
 }
 
-// Replaces placeholder in HTML pages
-String processor(const String& var){
-  if(var == "LOGMESSAGES"){
-    return getLogMessagesAsHtml();
-  } else if (var == "FINGERLIST") {
-    return fingerManager.getFingerListAsHtmlOptionList();
-  } else if (var == "HOSTNAME") {
-    return settingsManager.getWifiSettings().hostname;
-  } else if (var == "VERSIONINFO") {
-    return VersionInfo;
-  } else if (var == "WIFI_SSID") {
-    return settingsManager.getWifiSettings().ssid;
-  } else if (var == "WIFI_PASSWORD") {
-    if (settingsManager.getWifiSettings().password.isEmpty())
-      return "";
-    else
-      return "********"; // for security reasons the wifi password will not leave the device once configured
-  } else if (var.indexOf("DHCP_SETTING") != -1) {
-    return (settingsManager.getWifiSettings().dhcp_setting == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var == "LOCAL_IP") {
-    return settingsManager.getWifiSettings().localIP.toString();
-  } else if (var == "GATEWAY_IP") {
-    return settingsManager.getWifiSettings().gatewayIP.toString();
-  } else if (var == "SUBNET_MASK") {
-    return settingsManager.getWifiSettings().subnetMask.toString();
-  } else if (var == "DNS_IP0") {
-    return settingsManager.getWifiSettings().dnsIP0.toString();
-  } else if (var == "DNS_IP1") {
-    return settingsManager.getWifiSettings().dnsIP1.toString();
-  } else if (var == "MQTT_SERVER") {
-    return settingsManager.getAppSettings().mqttServer;
-  }else if (var == "MQTT_PORT") {
-    return String(settingsManager.getAppSettings().mqttPort);
-  } else if (var == "MQTT_USERNAME") {
-    return settingsManager.getAppSettings().mqttUsername;
-  } else if (var == "MQTT_PASSWORD") {
-    return settingsManager.getAppSettings().mqttPassword;
-  } else if (var == "MQTT_ROOTTOPIC") {
-    return settingsManager.getAppSettings().mqttRootTopic;
-  } else if (var == "NTP_SERVER") {
-    return settingsManager.getAppSettings().ntpServer;
-  } else if (var == "WEBPAGE_USERNAME") {
-    return settingsManager.getWebPageSettings().webPageUsername;
-  } else if (var == "WEBPAGE_PASSWORD") {
-    if (settingsManager.getWebPageSettings().webPagePassword.isEmpty())
-      return "";
-    else
-      return "********"; // for security reasons the web page password will not leave the device once configured
-  } else if (var.indexOf("ACTIVE_COLOR") != -1) {
-    return (settingsManager.getColorSettings().activeColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("ACTIVE_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().activeSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("SCAN_COLOR") != -1) {
-    return (settingsManager.getColorSettings().scanColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("SCAN_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().scanSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("MATCH_COLOR") != -1) {
-    return (settingsManager.getColorSettings().matchColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("MATCH_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().matchSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("ENROLL_COLOR") != -1) {
-    return (settingsManager.getColorSettings().enrollColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("ENROLL_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().enrollSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("CONNECT_COLOR") != -1) {
-    return (settingsManager.getColorSettings().connectColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("CONNECT_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().connectSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("WIFI_COLOR") != -1) {
-    return (settingsManager.getColorSettings().wifiColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("WIFI_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().wifiSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  } else if (var.indexOf("ERROR_COLOR") != -1) {
-    return (settingsManager.getColorSettings().errorColor == var.substring(var.length() - 1).toInt()) ? Selected : "";
-  } else if (var.indexOf("ERROR_SEQUENCE") != -1) {
-    return (settingsManager.getColorSettings().errorSequence == var.substring(var.length() - 1).toInt()) ? Checked : "";
-  }
+String processFile(const String& fileContent) {
+  String processedContent = fileContent;
+  processedContent.replace("%LOGMESSAGES%", getLogMessagesAsHtml());
+  processedContent.replace("%FINGERLIST%", fingerManager.getFingerListAsHtmlOptionList());
+  processedContent.replace("%HOSTNAME%", settingsManager.getWifiSettings().hostname);
+  processedContent.replace("%VERSIONINFO%", VersionInfo);
+  processedContent.replace("%WIFI_SSID%", settingsManager.getWifiSettings().ssid);
+  if (settingsManager.getWifiSettings().password.isEmpty())
+    processedContent.replace("%WIFI_PASSWORD%", "");
+  else
+    processedContent.replace("%WIFI_PASSWORD%", "********"); // for security reasons the wifi password will not leave the device once configured
+  processedContent.replace(("%DHCP_SETTING_" + String((int)settingsManager.getWifiSettings().dhcp_setting) + "%"), checked);
+  processedContent.replace("%LOCAL_IP%", settingsManager.getWifiSettings().localIP.toString());
+  processedContent.replace("%GATEWAY_IP%", settingsManager.getWifiSettings().gatewayIP.toString());
+  processedContent.replace("%SUBNET_MASK%", settingsManager.getWifiSettings().subnetMask.toString());
+  processedContent.replace("%DNS_IP0%", settingsManager.getWifiSettings().dnsIP0.toString());
+  processedContent.replace("%DNS_IP1%", settingsManager.getWifiSettings().dnsIP1.toString());
+  processedContent.replace("%MQTT_SERVER%", settingsManager.getAppSettings().mqttServer);
+  processedContent.replace("%MQTT_PORT%", String(settingsManager.getAppSettings().mqttPort));
+  processedContent.replace("%MQTT_USERNAME%", settingsManager.getAppSettings().mqttUsername);
+  if (settingsManager.getAppSettings().mqttPassword.isEmpty())
+    processedContent.replace("%MQTT_PASSWORD%", "");
+  else
+    processedContent.replace("%MQTT_PASSWORD%", "********"); // for security reasons the MQTT password will not leave the device once configured
+  processedContent.replace("%MQTT_ROOTTOPIC%", settingsManager.getAppSettings().mqttRootTopic);
+  processedContent.replace("%NTP_SERVER%", settingsManager.getAppSettings().ntpServer);
+  processedContent.replace("%WEBPAGE_USERNAME%", settingsManager.getWebPageSettings().webPageUsername);
+  if (settingsManager.getWebPageSettings().webPagePassword.isEmpty())
+    processedContent.replace("%WEBPAGE_PASSWORD%", "");
+  else
+    processedContent.replace("%WEBPAGE_PASSWORD%", "********"); // for security reasons the web page password will not leave the device once configured
+  processedContent.replace(("%ACTIVE_COLOR_" + String(settingsManager.getColorSettings().activeColor) + "%"), selected);
+  processedContent.replace(("%ACTIVE_SEQUENCE_" + String(settingsManager.getColorSettings().activeSequence) + "%"), checked);
+  processedContent.replace(("%SCAN_COLOR_" + String(settingsManager.getColorSettings().scanColor) + "%"), selected);
+  processedContent.replace(("%SCAN_SEQUENCE_" + String(settingsManager.getColorSettings().scanSequence) + "%"), checked);
+  processedContent.replace(("%MATCH_COLOR_" + String(settingsManager.getColorSettings().matchColor) + "%"), selected);
+  processedContent.replace(("%MATCH_SEQUENCE_" + String(settingsManager.getColorSettings().matchSequence) + "%"), checked);
+  processedContent.replace(("%ENROLL_COLOR_" + String(settingsManager.getColorSettings().enrollColor) + "%"), selected);
+  processedContent.replace(("%ENROLL_SEQUENCE_" + String(settingsManager.getColorSettings().enrollSequence) + "%"), checked);
+  processedContent.replace(("%CONNECT_COLOR_" + String(settingsManager.getColorSettings().connectColor) + "%"), selected);
+  processedContent.replace(("%CONNECT_SEQUENCE_" + String(settingsManager.getColorSettings().connectSequence) + "%"), checked);
+  processedContent.replace(("%WIFI_COLOR_" + String(settingsManager.getColorSettings().wifiColor) + "%"), selected);
+  processedContent.replace(("%WIFI_SEQUENCE_" + String(settingsManager.getColorSettings().wifiSequence) + "%"), checked);
+  processedContent.replace(("%ERROR_COLOR_" + String(settingsManager.getColorSettings().errorColor) + "%"), selected);
+  processedContent.replace(("%ERROR_SEQUENCE_" + String(settingsManager.getColorSettings().errorSequence) + "%"), checked);
 
-  return String();
+  return processedContent;
 }
-
 
 // send LastMessage to websocket clients
 void notifyClients(String message) {
@@ -334,20 +302,49 @@ void initWiFiAccessPointForConfiguration() {
   Serial.println(WifiConfigIp); 
 }
 
-// Function handling the HTTP Digest Authentication
-bool authenticate(AsyncWebServerRequest *request, WebPageSettings webPageSettings) {
-  if (!request->authenticate(generateDigestHash(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), webPageSettings.webPageRealm.c_str()).c_str())) {
-    request->requestAuthentication(webPageSettings.webPageRealm.c_str(), true);
-    return false;
+// Function to send a html file as a response to a request
+esp_err_t sendHTML(PsychicRequest *request, String fileName) {
+  File file = LittleFS.open(fileName.c_str(), "r");
+  if (!file) {
+    return request->reply(404, "text/plain", "File not found");
   }
-  return true;
+  String fileContent;
+  while (file.available()) {
+    fileContent += (char)file.read();
+  }
+  file.close();
+  // Process the file content using the processor function
+  String processedContent = processFile(fileContent);
+  return request->reply(processedContent.c_str());
+}
+
+void onOTAStart() {
+  // Log when OTA has started
+  Serial.println("OTA update started!");
+}
+
+void onOTAProgress(size_t current, size_t final) {
+  // Log every 1 second
+  if (millis() - ota_progress_millis > 1000) {
+    ota_progress_millis = millis();
+    Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
+  }
+}
+
+void onOTAEnd(bool success) {
+  // Log when OTA has finished
+  if (success) {
+    Serial.println("OTA update finished successfully!");
+  } else {
+    Serial.println("There was an error during OTA update!");
+  }
 }
 
 void startWebserver(){
   
-  // Initialize SPIFFS
-  if(!SPIFFS.begin(true)){
-    Serial.println("An Error has occurred while mounting SPIFFS");
+  // Initialize LittleFS
+  if(!LittleFS.begin(true)){
+    Serial.println("An Error has occurred while mounting LittleFS");
     return;
   }
 
@@ -356,290 +353,271 @@ void startWebserver(){
 
   // Load web page log in credentials
   WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
+
+  // Start server
+  webServer.listen(80);
+
+  // Set Authentication Credentials
+  ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
+
+  //optional low level setup server config stuff here.
+  //server.config is an ESP-IDF httpd_config struct
+  //see: https://docs.espressif.com/projects/esp-idf/en/v4.4.6/esp32/api-reference/protocols/esp_http_server.html#_CPPv412httpd_config
+  //increase maximum number of uri endpoint handlers (.on() calls)
+  webServer.config.max_uri_handlers = 20;
+
+  // Enable Over-the-air updates at http://<IPAddress>/update
+  ElegantOTA.begin(&webServer);    // Start ElegantOTA
+  // ElegantOTA callbacks
+  ElegantOTA.onStart(onOTAStart);
+  ElegantOTA.onProgress(onOTAProgress);
+  ElegantOTA.onEnd(onOTAEnd);
   
-  // webserver for normal operating or wifi config?
+  // webserver for normal operation mode or WiFi config mode?
   if (currentMode == Mode::wificonfig)
   {
     // =================
     // WiFi config mode
     // =================
 
-    webServer.on("/", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        request->send(SPIFFS, "/wificonfig.html", String(), false, processor);
+    webServer.on("/", HTTP_GET, [](PsychicRequest *request){
+      return sendHTML(request, "/wificonfig.html");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
+
+    webServer.on("/save", HTTP_GET, [](PsychicRequest *request){
+      if(request->hasParam("hostname")){
+        Serial.println("Save wifi config");
+        WifiSettings settings = settingsManager.getWifiSettings();
+        settings.hostname = request->getParam("hostname")->value();
+        settings.ssid = request->getParam("ssid")->value();
+        if (request->getParam("password")->value().equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+          settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
+        else
+          settings.password = request->getParam("password")->value();
+        settingsManager.saveWifiSettings(settings);
+        shouldReboot = true;
       }
-    });
-
-    webServer.on("/save", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("hostname"))
-        {
-          Serial.println("Save wifi config");
-          WifiSettings settings = settingsManager.getWifiSettings();
-          settings.hostname = request->arg("hostname");
-          settings.ssid = request->arg("ssid");
-          if (request->arg("password").equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
-            settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
-          else
-            settings.password = request->arg("password");
-          settingsManager.saveWifiSettings(settings);
-          shouldReboot = true;
-        }
-        request->redirect("/");
-      }
-    });
-
-    webServer.onNotFound([](AsyncWebServerRequest *request){
-      AsyncResponseStream *response = request->beginResponseStream("text/html");
-      response->printf("<!DOCTYPE html><html><head><title>FingerprintDoorbell</title><meta http-equiv=\"refresh\" content=\"0; url=http://%s\" /></head><body>", WiFi.softAPIP().toString().c_str());
-      response->printf("<p>Please configure your WiFi settings <a href='http://%s'>here</a> to connect FingerprintDoorbell to your home network.</p>", WiFi.softAPIP().toString().c_str());
-      response->print("</body></html>");
-      request->send(response);
-    });
-
+      return request->redirect("/");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
   }
   else
   {
     // =======================
-    // normal operating mode
+    // normal operation mode
     // =======================
-    events.onConnect([](AsyncEventSourceClient *client){
+
+    events.onOpen([](PsychicEventSourceClient *client){
       if(client->lastId()){
         Serial.printf("Client reconnected! Last message ID it got was: %u\n", client->lastId());
       }
-      //send event with message "ready", id current millis
+      // send event with message "ready", id current millis
       // and set reconnect delay to 1 second
       client->send(getLogMessagesAsHtml().c_str(),"message",millis(),1000);
     });
-    webServer.addHandler(&events);
 
-    // Route for root / web page
-    webServer.on("/", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        request->send(SPIFFS, "/index.html", String(), false, processor);
+    webServer.on("/", HTTP_GET, [](PsychicRequest *request){
+      return sendHTML(request, "/index.html");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
+
+    webServer.on("/enroll", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("startEnrollment")){
+        enrollId = request->getParam("newFingerprintId")->value();
+        enrollName = request->getParam("newFingerprintName")->value();
+        currentMode = Mode::enroll;
       }
-    });
+      return request->redirect("/");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/enroll", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("startEnrollment"))
+    webServer.on("/editFingerprints", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("selectedFingerprint")){
+        if(request->hasParam("btnDelete"))
         {
-          enrollId = request->arg("newFingerprintId");
-          enrollName = request->arg("newFingerprintName");
-          currentMode = Mode::enroll;
+          int id = request->getParam("selectedFingerprint")->value().toInt();
+          waitForMaintenanceMode();
+          fingerManager.deleteFinger(id);
+          currentMode = Mode::scan;
         }
-        request->redirect("/");
-      }
-    });
-
-    webServer.on("/editFingerprints", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("selectedFingerprint"))
+        else if (request->hasParam("btnRename"))
         {
-          if(request->hasArg("btnDelete"))
-          {
-            int id = request->arg("selectedFingerprint").toInt();
-            waitForMaintenanceMode();
-            fingerManager.deleteFinger(id);
-            currentMode = Mode::scan;
-          }
-          else if (request->hasArg("btnRename"))
-          {
-            int id = request->arg("selectedFingerprint").toInt();
-            String newName = request->arg("renameNewName");
-            fingerManager.renameFinger(id, newName);
-          }
-        }
-        request->redirect("/");  
-      }
-    });
-
-    webServer.on("/colorSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnSaveColorSettings"))
-        {
-          Serial.println("Save color and sequence settings");
-          ColorSettings colorSettings = settingsManager.getColorSettings();
-          colorSettings.activeColor = (uint8_t) request->arg("activeColor").toInt();
-          colorSettings.activeSequence = (uint8_t) request->arg("activeSequence").toInt();
-          colorSettings.scanColor = (uint8_t) request->arg("scanColor").toInt();
-          colorSettings.scanSequence = (uint8_t) request->arg("scanSequence").toInt();
-          colorSettings.matchColor = (uint8_t) request->arg("matchColor").toInt();
-          colorSettings.matchSequence = (uint8_t) request->arg("matchSequence").toInt();
-          colorSettings.enrollColor = (uint8_t) request->arg("enrollColor").toInt();
-          colorSettings.enrollSequence = (uint8_t) request->arg("enrollSequence").toInt();
-          colorSettings.connectColor = (uint8_t) request->arg("connectColor").toInt();
-          colorSettings.connectSequence = (uint8_t) request->arg("connectSequence").toInt();
-          colorSettings.wifiColor = (uint8_t) request->arg("wifiColor").toInt();
-          colorSettings.wifiSequence = (uint8_t) request->arg("wifiSequence").toInt();
-          colorSettings.errorColor = (uint8_t) request->arg("errorColor").toInt();
-          colorSettings.errorSequence = (uint8_t) request->arg("errorSequence").toInt();
-          settingsManager.saveColorSettings(colorSettings);
-          request->redirect("/colorSettings");
-          shouldReboot = true;
-        } else {
-          request->send(SPIFFS, "/colorSettings.html", String(), false, processor);
+          int id = request->getParam("selectedFingerprint")->value().toInt();
+          String newName = request->getParam("renameNewName")->value();
+          fingerManager.renameFinger(id, newName);
         }
       }
-    });
+      return request->redirect("/");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/wifiSettings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnSaveWiFiSettings"))
-        {
-          Serial.println("Save wifi config");
-          WifiSettings settings = settingsManager.getWifiSettings();
-          settings.hostname = request->arg("hostname");
-          settings.ssid = request->arg("ssid");
-          if (request->arg("password").equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
-            settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
-          else
-            settings.password = request->arg("password");
-          settings.dhcp_setting = request->arg("dhcp_setting").equals("1");
-          if(!settings.localIP.fromString(request->arg("local_ip")))
-            Serial.println("Local IP address could not be parsed.");
-          if(!settings.gatewayIP.fromString(request->arg("gateway_ip")))
-            Serial.println("Gateway IP address could not be parsed.");
-          if(!settings.subnetMask.fromString(request->arg("subnet_mask")))
-            Serial.println("Subnet mask could not be parsed.");
-          if(!settings.dnsIP0.fromString(request->arg("dns_ip0")))
-            Serial.println("DNS server 1 could not be parsed.");
-          if(!settings.dnsIP1.fromString(request->arg("dns_ip1")))
-            Serial.println("DNS server 2 could not be parsed.");
-          settingsManager.saveWifiSettings(settings);
-          request->redirect("/wifiSettings");
-          shouldReboot = true;
-        } else {
-          request->send(SPIFFS, "/wifiSettings.html", String(), false, processor);
-        }
+    webServer.on("/colorSettings", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnSaveColorSettings")){
+        Serial.println("Save color and sequence settings");
+        ColorSettings colorSettings = settingsManager.getColorSettings();
+        colorSettings.activeColor = (uint8_t) request->getParam("activeColor")->value().toInt();
+        colorSettings.activeSequence = (uint8_t) request->getParam("activeSequence")->value().toInt();
+        colorSettings.scanColor = (uint8_t) request->getParam("scanColor")->value().toInt();
+        colorSettings.scanSequence = (uint8_t) request->getParam("scanSequence")->value().toInt();
+        colorSettings.matchColor = (uint8_t) request->getParam("matchColor")->value().toInt();
+        colorSettings.matchSequence = (uint8_t) request->getParam("matchSequence")->value().toInt();
+        colorSettings.enrollColor = (uint8_t) request->getParam("enrollColor")->value().toInt();
+        colorSettings.enrollSequence = (uint8_t) request->getParam("enrollSequence")->value().toInt();
+        colorSettings.connectColor = (uint8_t) request->getParam("connectColor")->value().toInt();
+        colorSettings.connectSequence = (uint8_t) request->getParam("connectSequence")->value().toInt();
+        colorSettings.wifiColor = (uint8_t) request->getParam("wifiColor")->value().toInt();
+        colorSettings.wifiSequence = (uint8_t) request->getParam("wifiSequence")->value().toInt();
+        colorSettings.errorColor = (uint8_t) request->getParam("errorColor")->value().toInt();
+        colorSettings.errorSequence = (uint8_t) request->getParam("errorSequence")->value().toInt();
+        settingsManager.saveColorSettings(colorSettings);
+        shouldReboot = true;
+        return request->redirect("/colorSettings");
+      } else {
+        return sendHTML(request, "/colorSettings.html");
       }
-    });
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/settings", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnSaveSettings"))
-        {
-          Serial.println("Save settings");
-          AppSettings settings = settingsManager.getAppSettings();
-          settings.mqttServer = request->arg("mqtt_server");
-          settings.mqttPort = (uint16_t) request->arg("mqtt_port").toInt();
-          settings.mqttUsername = request->arg("mqtt_username");
-          settings.mqttPassword = request->arg("mqtt_password");
-          settings.mqttRootTopic = request->arg("mqtt_rootTopic");
-          settings.ntpServer = request->arg("ntpServer");
-          settingsManager.saveAppSettings(settings);
-          request->redirect("/settings");
-          shouldReboot = true;
-        } else if(request->hasArg("btnSaveWebPageSettings"))
-        {
-          Serial.println("Save web page settings");
-          WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
-          webPageSettings.webPageUsername = request->arg("webpage_username");
-          webPageSettings.webPagePassword = request->arg("webpage_password");
-          settingsManager.saveWebPageSettings(webPageSettings);
-          request->redirect("/settings");
-          shouldReboot = true;
-        } else {
-          request->send(SPIFFS, "/settings.html", String(), false, processor);
-        }
+    webServer.on("/wifiSettings", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnSaveWiFiSettings")){
+        Serial.println("Save wifi config");
+        WifiSettings settings = settingsManager.getWifiSettings();
+        settings.hostname = request->getParam("hostname")->value();
+        settings.ssid = request->getParam("ssid")->value();
+        if (request->getParam("password")->value().equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+          settings.password = settingsManager.getWifiSettings().password; // use the old, already saved, one
+        else
+          settings.password = request->getParam("password")->value();
+        settings.dhcp_setting = request->getParam("dhcp_setting")->value().equals("1");
+        if(!settings.localIP.fromString(request->getParam("local_ip")->value()))
+          Serial.println("Local IP address could not be parsed.");
+        if(!settings.gatewayIP.fromString(request->getParam("gateway_ip")->value()))
+          Serial.println("Gateway IP address could not be parsed.");
+        if(!settings.subnetMask.fromString(request->getParam("subnet_mask")->value()))
+          Serial.println("Subnet mask could not be parsed.");
+        if(!settings.dnsIP0.fromString(request->getParam("dns_ip0")->value()))
+          Serial.println("DNS server 1 could not be parsed.");
+        if(!settings.dnsIP1.fromString(request->getParam("dns_ip1")->value()))
+          Serial.println("DNS server 2 could not be parsed.");
+        settingsManager.saveWifiSettings(settings);
+        shouldReboot = true;
+        return request->redirect("/wifiSettings");
+      } else {
+        return sendHTML(request, "/wifiSettings.html");
       }
-    });
+      return request->redirect("/wifiSettings");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/pairing", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnDoPairing"))
-        {
-          Serial.println("Do (re)pairing");
-          doPairing();
-          request->redirect("/");  
-        } else {
-          request->send(SPIFFS, "/settings.html", String(), false, processor);
-        }
+    webServer.on("/settings", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnSaveSettings")){
+        Serial.println("Save settings");
+        AppSettings settings = settingsManager.getAppSettings();
+        settings.mqttServer = request->getParam("mqtt_server")->value();
+        String mqttPortString = request->getParam("mqtt_port")->value();
+        settings.mqttPort = (uint16_t) mqttPortString.toInt();
+        settings.mqttUsername = request->getParam("mqtt_username")->value();
+        settings.mqttPassword = request->getParam("mqtt_password")->value();
+        settings.mqttRootTopic = request->getParam("mqtt_rootTopic")->value();
+        settings.ntpServer = request->getParam("ntpServer")->value();
+        settingsManager.saveAppSettings(settings);
+        shouldReboot = true;
+        return request->redirect("/settings");
+      } else if(request->hasParam("btnSaveWebPageSettings"))
+      {
+        Serial.println("Save web page settings");
+        WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
+        webPageSettings.webPageUsername = request->getParam("webpage_username")->value();
+        webPageSettings.webPagePassword = request->getParam("webpage_password")->value();
+        settingsManager.saveWebPageSettings(webPageSettings);
+        shouldReboot = true;
+        return request->redirect("/settings");
+      } else {
+        return sendHTML(request, "/settings.html");
       }
-    });
+      return request->redirect("/settings");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/factoryReset", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnFactoryReset"))
-        {
-          notifyClients("Factory reset initiated...");
-          
-          if (!fingerManager.deleteAll())
-            notifyClients("Finger database could not be deleted.");
-
-          if (!settingsManager.deleteColorSettings())
-            notifyClients("Color settings could not be deleted.");
-
-          if (!settingsManager.deleteWifiSettings())
-            notifyClients("Wifi settings could not be deleted.");
-          
-          if (!settingsManager.deleteAppSettings())
-            notifyClients("App settings could not be deleted.");
-          
-          if (!settingsManager.deleteWebPageSettings())
-            notifyClients("Web page settings could not be deleted.");
-          
-          request->redirect("/");  
-          shouldReboot = true;
-        } else {
-          request->send(SPIFFS, "/settings.html", String(), false, processor);
-        }
+    webServer.on("/pairing", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnDoPairing"))
+      {
+        Serial.println("Do (re)pairing");
+        doPairing();
+        return request->redirect("/");  
+      } else {
+        return sendHTML(request, "/settings.html");
       }
-    });
+      return request->redirect("/");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.on("/deleteAllFingerprints", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-      if (authenticate(request, webPageSettings)) {
-        if(request->hasArg("btnDeleteAllFingerprints"))
-        {
-          notifyClients("Deleting all fingerprints...");
-          
-          if (!fingerManager.deleteAll())
-            notifyClients("Finger database could not be deleted.");
-          
-          request->redirect("/");  
-          
-        } else {
-          request->send(SPIFFS, "/settings.html", String(), false, processor);
-        }
+    webServer.on("/factoryReset", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnFactoryReset")){
+        notifyClients("Factory reset initiated...");
+        
+        if (!fingerManager.deleteAll())
+          notifyClients("Finger database could not be deleted.");
+
+        if (!settingsManager.deleteColorSettings())
+          notifyClients("Color settings could not be deleted.");
+
+        if (!settingsManager.deleteWifiSettings())
+          notifyClients("Wifi settings could not be deleted.");
+        
+        if (!settingsManager.deleteAppSettings())
+          notifyClients("App settings could not be deleted.");
+        
+        if (!settingsManager.deleteWebPageSettings())
+          notifyClients("Web page settings could not be deleted.");
+
+        shouldReboot = true;
+        return request->redirect("/");  
+      } else {
+        return sendHTML(request, "/settings.html");
       }
-    });
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
-    webServer.onNotFound([](AsyncWebServerRequest *request){
-      request->send(404, "text/plain", "Not found");
-    });
-
-    
+    webServer.on("/deleteAllFingerprints", HTTP_GET, [webPageSettings](PsychicRequest *request){
+      if(request->hasParam("btnDeleteAllFingerprints")){
+        notifyClients("Deleting all fingerprints...");
+        
+        if (!fingerManager.deleteAll())
+          notifyClients("Finger database could not be deleted.");
+        
+        return request->redirect("/");
+        
+      } else {
+        return sendHTML(request, "/settings.html");
+      }
+      return request->redirect("/");
+    })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
   } // end normal operating mode
 
-
   // common url callbacks
-  webServer.on("/reboot", HTTP_GET, [webPageSettings](AsyncWebServerRequest *request){
-    if (authenticate(request, webPageSettings)) {
-      request->redirect("/");
-      shouldReboot = true;
+  webServer.on("/reboot", HTTP_GET, [webPageSettings](PsychicRequest *request){
+    shouldReboot = true;
+    return request->redirect("/");
+  })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
+
+  webServer.on("/bootstrap.min.css", HTTP_GET, [](PsychicRequest *request){
+    String filename = "/bootstrap.min.css";
+    PsychicFileResponse response(request, LittleFS, filename, "text/css");
+    return response.send();
+  });
+
+  webServer.on("/logout", HTTP_GET, [](PsychicRequest *request){
+    File file = LittleFS.open("/logout.html", "r");
+    if (!file) {
+      return request->reply(401, "text/plain", "Successfully logged out!");
     }
+    String fileContent;
+    while (file.available()) {
+      fileContent += (char)file.read();
+    }
+    file.close();
+    // Process the file content using the processor function
+    String processedContent = processFile(fileContent);
+    return request->reply(401, "text/html", processedContent.c_str());
   });
 
-  webServer.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+  webServer.onNotFound([](PsychicRequest *request){
+    return request->redirect("/");
   });
-
-  webServer.on("/logout", HTTP_GET, [](AsyncWebServerRequest *request){
-    File logoutPage = SPIFFS.open("/logout.html", "r");
-    // Set the content type
-    request->send(401, "text/html", logoutPage.readString());
-    logoutPage.close();
-  });
-
-
-  // Enable Over-the-air updates at http://<IPAddress>/update
-  ElegantOTA.begin(&webServer);    // Start ElegantOTA
-  
-  // Start server
-  webServer.begin();
 
   notifyClients("System booted successfully!");
-
 }
 
 void mqttCallback(char* topic, byte* message, unsigned int length) {
@@ -804,7 +782,7 @@ void reboot()
   mqttClient.disconnect();
   espClient.stop();
   dnsServer.stop();
-  webServer.end();
+  webServer.stop();
   WiFi.disconnect();
   ESP.restart();
 }
@@ -829,9 +807,6 @@ void setup()
   settingsManager.loadWebPageSettings();
   settingsManager.loadAppSettings();
   settingsManager.loadColorSettings();
-
-  // Set Authentication Credentials
-  ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
 
   fingerManager.connect();
   

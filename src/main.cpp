@@ -7,7 +7,9 @@
 #include <ESPmDNS.h>
 #include <time.h>
 #include <PsychicHttp.h>
-#include <PsychicHttpsServer.h>
+#ifdef PSY_ENABLE_SSL
+  #include <PsychicHttpsServer.h>
+#endif
 #include <ElegantOTA.h>
 #include <LittleFS.h>
 #include <PubSubClient.h>
@@ -61,7 +63,15 @@ bool needMaintenanceMode = false;
 
 const byte DNS_PORT = 53;
 DNSServer dnsServer;
-PsychicHttpServer webServer; // PsychicHttpServer on port 80
+// #define PSY_ENABLE_SSL to enable SSL encryption
+#ifdef PSY_ENABLE_SSL
+  bool app_enable_ssl = true;
+  String server_cert;
+  String server_key;
+  PsychicHttpsServer webServer;
+#else
+  PsychicHttpServer webServer;
+#endif
 PsychicEventSource events; // event source (Server-Sent events)
 
 WiFiClient espClient;
@@ -354,17 +364,61 @@ void startWebserver(){
   // Load web page log in credentials
   WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
 
-  // Start server
-  webServer.listen(80);
-
-  // Set Authentication Credentials
-  ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
-
   //optional low level setup server config stuff here.
   //server.config is an ESP-IDF httpd_config struct
   //see: https://docs.espressif.com/projects/esp-idf/en/v4.4.6/esp32/api-reference/protocols/esp_http_server.html#_CPPv412httpd_config
   //increase maximum number of uri endpoint handlers (.on() calls)
   webServer.config.max_uri_handlers = 20;
+
+  //look up our keys?
+  #ifdef PSY_ENABLE_SSL
+    if (app_enable_ssl)
+    {
+      File fp = LittleFS.open("/server.crt");
+      if (fp){
+        server_cert = fp.readString();
+      } else {
+        Serial.println("server.pem not found, SSL not available");
+        app_enable_ssl = false;
+      }
+      fp.close();
+
+      File fp2 = LittleFS.open("/server.key");
+      if (fp2) {
+        server_key = fp2.readString();
+      } else {
+        Serial.println("server.key not found, SSL not available");
+        app_enable_ssl = false;
+      }
+      fp2.close();
+    }
+  #endif
+
+
+  // Start server
+  #ifdef PSY_ENABLE_SSL
+    if (app_enable_ssl)
+      {
+        webServer.ssl_config.httpd.max_uri_handlers = 20; //maximum number of uri handlers (.on() calls)
+
+        webServer.listen(443, server_cert.c_str(), server_key.c_str());
+        //this creates a 2nd server listening on port 80 and redirects all requests HTTPS
+        PsychicHttpServer *redirectServer = new PsychicHttpServer();
+        redirectServer->config.ctrl_port = 20420; // just a random port different from the default one
+        redirectServer->listen(80);
+        redirectServer->onNotFound([](PsychicRequest *request){
+          String url = "https://" + request->host() + request->url();
+          return request->redirect(url.c_str());
+        });
+      } else {
+        webServer.listen(80);
+      }
+  #else
+    webServer.listen(80);
+  #endif
+
+  // Set Authentication Credentials
+  ElegantOTA.setAuth(settingsManager.getWebPageSettings().webPageUsername.c_str(), settingsManager.getWebPageSettings().webPagePassword.c_str());
 
   // Enable Over-the-air updates at http://<IPAddress>/update
   ElegantOTA.begin(&webServer);    // Start ElegantOTA

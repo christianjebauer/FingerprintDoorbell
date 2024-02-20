@@ -6,3 +6,5 @@
 *.pptx
 *.pdf
 builds
+*.key
+*.crt

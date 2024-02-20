@@ -50,8 +50,6 @@ bool shouldReboot = false;
 unsigned long wifiReconnectPreviousMillis = 0;
 unsigned long mqttReconnectPreviousMillis = 0;
 unsigned long ota_progress_millis = 0;
-unsigned long lastUpdate = 0;
-char output[60];
 
 String enrollId;
 String enrollName;
@@ -554,7 +552,6 @@ void startWebserver(){
       } else {
         return sendHTML(request, "/wifiSettings.html");
       }
-      return request->redirect("/wifiSettings");
     })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
     webServer.on("/settings", HTTP_GET, [webPageSettings](PsychicRequest *request){
@@ -565,7 +562,10 @@ void startWebserver(){
         String mqttPortString = request->getParam("mqtt_port")->value();
         settings.mqttPort = (uint16_t) mqttPortString.toInt();
         settings.mqttUsername = request->getParam("mqtt_username")->value();
-        settings.mqttPassword = request->getParam("mqtt_password")->value();
+        if (request->getParam("mqtt_password")->value().equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+          settings.mqttPassword = settingsManager.getAppSettings().mqttPassword; // use the old, already saved, one
+        else
+          settings.mqttPassword = request->getParam("mqtt_password")->value();
         settings.mqttRootTopic = request->getParam("mqtt_rootTopic")->value();
         settings.ntpServer = request->getParam("ntpServer")->value();
         settingsManager.saveAppSettings(settings);
@@ -576,14 +576,16 @@ void startWebserver(){
         Serial.println("Save web page settings");
         WebPageSettings webPageSettings = settingsManager.getWebPageSettings();
         webPageSettings.webPageUsername = request->getParam("webpage_username")->value();
-        webPageSettings.webPagePassword = request->getParam("webpage_password")->value();
+        if (request->getParam("webpage_password")->value().equals("********")) // password is replaced by wildcards when given to the browser, so if the user didn't changed it, don't save it
+          webPageSettings.webPagePassword = settingsManager.getWebPageSettings().webPagePassword; // use the old, already saved, one
+        else
+          webPageSettings.webPagePassword = request->getParam("webpage_password")->value();
         settingsManager.saveWebPageSettings(webPageSettings);
         shouldReboot = true;
         return request->redirect("/settings");
       } else {
         return sendHTML(request, "/settings.html");
       }
-      return request->redirect("/settings");
     })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
     webServer.on("/pairing", HTTP_GET, [webPageSettings](PsychicRequest *request){
@@ -595,7 +597,6 @@ void startWebserver(){
       } else {
         return sendHTML(request, "/settings.html");
       }
-      return request->redirect("/");
     })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
 
     webServer.on("/factoryReset", HTTP_GET, [webPageSettings](PsychicRequest *request){
@@ -634,9 +635,8 @@ void startWebserver(){
         return request->redirect("/");
         
       } else {
-        return sendHTML(request, "/settings.html");
+        return sendHTML(request, "/.html");
       }
-      return request->redirect("/");
     })->setAuthentication(webPageSettings.webPageUsername.c_str(), webPageSettings.webPagePassword.c_str(), BASIC_AUTH, webPageSettings.webPageRealm.c_str(), "You must log in.");
   } // end normal operating mode
 
@@ -836,7 +836,7 @@ void reboot()
   mqttClient.disconnect();
   espClient.stop();
   dnsServer.stop();
-  webServer.stop();
+  // webServer.stop(); // does not work as intended
   WiFi.disconnect();
   ESP.restart();
 }
